@@ -52,7 +52,7 @@ async function execute(interaction, client) {
         console.log(`Generating playlist for: "${query}"...`);
 
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash",
+            model: "gemini-3.1-flash-lite-preview",
             contents: query,
             config: {
                 systemInstruction: systemPrompt
