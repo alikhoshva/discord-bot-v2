@@ -11,7 +11,7 @@ export default {
     prefix: "!",
     lavalink: {
         host: process.env.LAVALINK_HOST || "192.168.1.249",
-        port: process.env.LAVALINK_PORT || 2333,
+        port: parseInt(process.env.LAVALINK_PORT) || 2333,
         password: process.env.LAVALINK_PASSWORD || "youshallnotpass",
         secure: process.env.LAVALINK_SECURE === 'true'
     }
