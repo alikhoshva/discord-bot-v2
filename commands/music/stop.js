@@ -5,7 +5,7 @@ const data = new SlashCommandBuilder()
   .setName('stop')
   .setDescription('Stop playback and clear the queue');
 
-function execute(interaction, client) {
+async function execute(interaction, client) {
   const player = client.manager.players.get(interaction.guild.id);
 
   if (!player) {
@@ -23,7 +23,7 @@ function execute(interaction, client) {
     });
   }
 
-  player.stop(); // Stops the current track.
+  await player.stop(); // Stops the current track.
   player.queue.clear(); // Clears all tracks from the queue.
 
   interaction.reply('Stopped playback and cleared the queue.');

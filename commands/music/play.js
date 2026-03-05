@@ -36,7 +36,7 @@ async function execute(interaction, client) {
   });
 
   // Step 4: Connect to the voice channel.
-  player.connect();
+  await player.connect();
 
   // Step 5: Search for the requested track.
   const searchResult = await client.manager.search({
@@ -60,7 +60,7 @@ async function execute(interaction, client) {
       });
 
       if (!player.playing) {
-        player.play();
+        await player.play();
       }
       break;
 
@@ -73,7 +73,7 @@ async function execute(interaction, client) {
       });
 
       if (!player.playing) {
-        player.play();
+        await player.play();
       }
       break;
 

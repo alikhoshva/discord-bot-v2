@@ -79,7 +79,7 @@ async function execute(interaction, client) {
     });
 
     // Step 4: Connect to the voice channel.
-    player.connect();
+    await player.connect();
 
     // Step 5: Search for all tracks in parallel
     console.log("Searching for all 10 tracks in parallel...");
@@ -118,7 +118,7 @@ async function execute(interaction, client) {
 
     // Step 8: Start the player *once* if it's not already playing
     if (!player.playing) {
-        player.play();
+        await player.play();
     }
 
     // Final reply

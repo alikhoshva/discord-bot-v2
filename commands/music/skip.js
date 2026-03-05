@@ -49,7 +49,7 @@ async function execute(interaction, client) {
   for(let i =0; i<amount-1; i++){
     player.queue.remove(0)
   }
-  player.skip()
+  await player.skip()
 
   interaction.reply(`Skipped: **${amount}**`);
 }

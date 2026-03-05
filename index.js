@@ -1,6 +1,6 @@
 
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
-import { Manager } from 'moonlink.js';
+import { Manager, Connectors } from 'moonlink.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import config from './config.js';
@@ -17,21 +17,15 @@ client.manager = new Manager({
 			secure: config.lavalink.secure,     // Whether to use SSL/TLS for the connection
 		},
 	],
-	// This function sends voice state updates to Discord
-	// It's required for the bot to join voice channels
-	sendPayload: (guildId, payload) => {
-		const guild = client.guilds.cache.get(guildId);
-		if (guild) guild.shard.send(JSON.parse(payload));
-	},
 	options: {
-		// Disable internal sources to prioritize LavaSrc
-		disableNativeSources: true,
-	},
-	autoPlay: true, // Automatically play the next song in the queue
+        defaultPlayer: { autoPlay: true }
+    }
+
 });
 
 
-// Add this to your index.js file after creating the manager
+client.manager.use(new Connectors.DiscordJs(), client);
+
 
 // Node connection events
 client.manager.on('nodeConnect', (node) => {
@@ -68,9 +62,9 @@ client.manager.on('queueEnd', (player) => {
 
 	// Disconnect after a delay if no new tracks are added
 	// This helps save resources when the bot is not in use
-	setTimeout(() => {
+	setTimeout(async () => {
 		if (!player.playing && player.queue.size === 0) {
-			player.destroy();
+			await player.destroy();
 			if (channel) {
 				channel.send('Disconnected due to inactivity.');
 			}
@@ -128,9 +122,6 @@ for (const file of eventFiles) {
 	}
 }
 
-client.on('raw', (packet) => {
-	client.manager.packetUpdate(packet);
-});
 
 // Log in to Discord with your client's token
 client.login(config.token);
