@@ -23,8 +23,9 @@ async function execute(interaction, client) {
     });
   }
 
-  await player.stop(); // Stops the current track.
+  
   player.queue.clear(); // Clears all tracks from the queue.
+  await player.stop(); // Stops the current track.
 
   interaction.reply(`Stopping and clearing queue.`);
 }
