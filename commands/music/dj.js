@@ -51,14 +51,18 @@ async function execute(interaction, client) {
     try {
         console.log(`Generating playlist for: "${query}"...`);
 
+        const randomSeed = Math.floor(Math.random() * 1000000);
+
         const response = await ai.models.generateContent({
             model: "gemini-3.1-flash-lite-preview",
-            contents: query,
+            contents: `Seed: ${randomSeed} | User Vibe: ${query}`,
             config: {
                 systemInstruction: systemPrompt
             },
             generationConfig: {
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                temperature: 0.9,
+                topP: 0.95,
             }
         });
 
