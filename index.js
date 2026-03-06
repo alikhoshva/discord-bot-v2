@@ -47,30 +47,46 @@ client.manager.on('trackStart', (player, track) => {
 	if (channel) {
 		channel.send(`Now playing: **${track.title}**`);
 	}
+	if (player.idleTimeout) {
+        clearTimeout(player.idleTimeout);
+        player.idleTimeout = null;
+    }
 });
+
 
 client.manager.on('trackEnd', (player, track) => {
 	console.log(`Track ended: ${track.title}`);
+
+	if (player.queue.size === 0) {
+        startIdleTimer(player);
+    }
 });
 
 client.manager.on('queueEnd', (player) => {
-	// Send a message when the queue ends
-	const channel = client.channels.cache.get(player.textChannelId);
-	if (channel) {
-		channel.send('Queue ended. Disconnecting in 30 seconds if no new tracks are added.');
-	}
-
-	// Disconnect after a delay if no new tracks are added
-	// This helps save resources when the bot is not in use
-	setTimeout(async () => {
-		if (!player.playing && player.queue.size === 0) {
-			await player.destroy();
-			if (channel) {
-				channel.send('Disconnected due to inactivity.');
-			}
-		}
-	}, 30000); // 30 seconds
+	startIdleTimer(player);
 });
+
+
+function startIdleTimer(player) {
+    // Prevent multiple timers from running at the same time
+    if (player.idleTimeout) return; 
+
+    const channel = client.channels.cache.get(player.textChannelId);
+    if (channel) {
+        channel.send('Playback stopped. Disconnecting in 30 seconds if no new tracks are added.');
+    }
+
+    // Attach the timeout to the player object so we can clear it later
+    player.idleTimeout = setTimeout(async () => {
+        // Double check that it's still idle before destroying
+        if (!player.playing && player.queue.size === 0) {
+            await player.destroy();
+            if (channel) {
+                channel.send('Disconnected due to inactivity.');
+            }
+        }
+    }, 30000); // 30 seconds
+}
 
 
 client.commands = new Collection();
