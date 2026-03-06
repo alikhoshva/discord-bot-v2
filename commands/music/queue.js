@@ -49,7 +49,7 @@ function execute(interaction, client) {
   // Step 7: Add the queue tracks to the embed (No change needed)
   if (player.queue.size > 0) {
     const tracks = player.queue.tracks.map((track, index) => {
-      return `${index + 1}. [${track.title}](${track.url}) | \`${formatDuration(track.duration)}\``;
+      return `${index + 1}. [${track.title}](${track.uri}) | \`${formatDuration(track.duration)}\``;
     });
 
     embed.addFields({

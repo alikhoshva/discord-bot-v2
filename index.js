@@ -18,7 +18,7 @@ client.manager = new Manager({
 		},
 	],
 	options: {
-        defaultPlayer: { autoPlay: true }
+        defaultPlayer: { autoPlay: false }
     }
 
 });
