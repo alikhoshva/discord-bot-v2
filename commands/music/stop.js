@@ -25,6 +25,8 @@ async function execute(interaction, client) {
 
   await player.stop(); // Stops the current track.
   player.queue.clear(); // Clears all tracks from the queue.
+
+  interaction.reply(`Stopping and clearing queue.`);
 }
 
 export default {
