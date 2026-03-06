@@ -1,5 +1,5 @@
 // commands/queue.js
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, MessageFlags } from 'discord.js';
 
 const data = new SlashCommandBuilder()
   .setName('queue')
@@ -13,7 +13,7 @@ function execute(interaction, client) {
   if (!player) {
     return interaction.reply({
       content: 'There is nothing playing in this server!',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -21,7 +21,7 @@ function execute(interaction, client) {
   if (!player.current && player.queue.size === 0) {
     return interaction.reply({
       content: 'There are no tracks in the queue!',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -42,7 +42,7 @@ function execute(interaction, client) {
   // Step 6: Add the current track to the embed (No change needed)
   if (player.current) {
     embed.setDescription(
-      `**Now Playing:**\n[${player.current.title}](${player.current.url}) | \`${formatDuration(player.current.duration)}\``,
+      `**Now Playing:**\n[${player.current.title}](${player.current.uri}) | \`${formatDuration(player.current.duration)}\``,
     );
   }
 

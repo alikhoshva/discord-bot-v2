@@ -1,5 +1,5 @@
 // commands/skip.js
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 
 const data = new SlashCommandBuilder()
   .setName('skip')
@@ -19,7 +19,7 @@ async function execute(interaction, client) {
   if (!player) {
     return interaction.reply({
       content: 'There is nothing playing in this server!',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -27,14 +27,14 @@ async function execute(interaction, client) {
     return interaction.reply({
       content:
         'You need to be in the same voice channel as the bot to use this command!',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   if (!player.current) {
     return interaction.reply({
       content: 'There is nothing playing right now!',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 

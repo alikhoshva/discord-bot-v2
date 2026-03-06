@@ -75,7 +75,7 @@ async function execute(interaction, client) {
         guildId: interaction.guild.id,
         voiceChannelId: channel.id,
         textChannelId: interaction.channel.id,
-        autoPlay: true,
+        autoPlay: false,
     });
 
     // Step 4: Connect to the voice channel.
