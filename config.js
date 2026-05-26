@@ -8,6 +8,7 @@ export default {
     token: process.env.DISCORD_BOT_TOKEN,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
     prefix: "!",
     lavalink: {
         host: process.env.LAVALINK_HOST || "192.168.1.249",

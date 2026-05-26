@@ -54,7 +54,7 @@ async function execute(interaction, client) {
         const randomSeed = Math.floor(Math.random() * 1000000);
 
         const response = await ai.models.generateContent({
-            model: "gemini-3.1-flash-lite-preview",
+            model: config.GEMINI_MODEL,
             contents: `Seed: ${randomSeed} | User Vibe: ${query}`,
             config: {
                 systemInstruction: systemPrompt
