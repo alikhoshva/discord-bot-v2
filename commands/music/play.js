@@ -25,8 +25,8 @@ async function execute(interaction, client) {
   }
 
   // Check if the bot is already playing/connected in another voice channel
-  const player = client.manager.players.get(interaction.guild.id);
-  if (player && player.voiceChannelId && channel.id !== player.voiceChannelId) {
+  const existingPlayer = client.manager.players.get(interaction.guild.id);
+  if (existingPlayer && existingPlayer.voiceChannelId && channel.id !== existingPlayer.voiceChannelId) {
     return interaction.editReply('You need to be in the same voice channel as the bot to use this command!');
   }
 
