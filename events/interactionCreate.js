@@ -1,6 +1,6 @@
 // events/interactionCreate.js
 import { google } from 'googleapis';
-import { Events } from 'discord.js'; // <-- 1. Import Events
+import { Events, MessageFlags } from 'discord.js'; // <-- 1. Import Events
 import config from './../config.js';
 
 const youtube = google.youtube({

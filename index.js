@@ -41,9 +41,16 @@ client.manager.on('nodeError', (node, error) => {
 });
 
 // Playback events
-client.manager.on('trackStart', (player, track) => {
+client.manager.on('trackStart', async (player, track) => {
 	// Send a message when a track starts playing
-	const channel = client.channels.cache.get(player.textChannelId);
+	let channel = client.channels.cache.get(player.textChannelId);
+	if (!channel) {
+		try {
+			channel = await client.channels.fetch(player.textChannelId);
+		} catch (error) {
+			console.error(`Failed to fetch text channel: ${error}`);
+		}
+	}
 	if (channel) {
 		channel.send(`Now playing: **${track.title}**`);
 	}
@@ -67,22 +74,41 @@ client.manager.on('queueEnd', (player) => {
 });
 
 
-function startIdleTimer(player) {
+async function startIdleTimer(player) {
     // Prevent multiple timers from running at the same time
     if (player.idleTimeout) return; 
 
-    const channel = client.channels.cache.get(player.textChannelId);
+    let channel = client.channels.cache.get(player.textChannelId);
+    if (!channel) {
+        try {
+            channel = await client.channels.fetch(player.textChannelId);
+        } catch (error) {
+            console.error(`Failed to fetch text channel: ${error}`);
+        }
+    }
     if (channel) {
         channel.send('Playback stopped. Disconnecting in 30 seconds if no new tracks are added.');
     }
 
     // Attach the timeout to the player object so we can clear it later
     player.idleTimeout = setTimeout(async () => {
+        // Check if the player is still in the manager
+        const activePlayer = client.manager.players.get(player.guildId);
+        if (!activePlayer) return;
+
         // Double check that it's still idle before destroying
-        if (!player.playing && player.queue.size === 0) {
-            await player.destroy();
-            if (channel) {
-                channel.send('Disconnected due to inactivity.');
+        if (!activePlayer.playing && activePlayer.queue.size === 0) {
+            await activePlayer.destroy();
+            let textChannel = client.channels.cache.get(activePlayer.textChannelId);
+            if (!textChannel) {
+                try {
+                    textChannel = await client.channels.fetch(activePlayer.textChannelId);
+                } catch (error) {
+                    console.error(`Failed to fetch text channel: ${error}`);
+                }
+            }
+            if (textChannel) {
+                textChannel.send('Disconnected due to inactivity.');
             }
         }
     }, 30000); // 30 seconds

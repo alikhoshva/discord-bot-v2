@@ -24,6 +24,12 @@ async function execute(interaction, client) {
     return interaction.editReply('You need to join a voice channel first!');
   }
 
+  // Check if the bot is already playing/connected in another voice channel
+  const player = client.manager.players.get(interaction.guild.id);
+  if (player && player.voiceChannelId && channel.id !== player.voiceChannelId) {
+    return interaction.editReply('You need to be in the same voice channel as the bot to use this command!');
+  }
+
   // Step 2: Get the search query from the command's *options*.
   const query = interaction.options.getString('song');
 
