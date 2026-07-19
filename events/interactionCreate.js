@@ -1,12 +1,6 @@
 // events/interactionCreate.js
-import { google } from 'googleapis';
-import { Events, MessageFlags } from 'discord.js'; // <-- 1. Import Events
+import { Events, MessageFlags } from 'discord.js';
 import config from './../config.js';
-
-const youtube = google.youtube({
-    version: 'v3',
-    auth: config.YOUTUBE_API_KEY,
-});
 
 const autocompleteDebounce = new Map();
 const DEBOUNCE_DELAY = 300;
@@ -62,24 +56,28 @@ export default {
                 // 2. Set a *new* timer.
                 const newTimer = setTimeout(async () => {
                     try {
-                        // This code runs *only* when the 500ms pause is over
+                        if (interaction.responded) return;
                         const suggestions = await getYoutubeSuggestions(focusedValue);
-                        await interaction.respond(suggestions);
+                        if (!interaction.responded) {
+                            await interaction.respond(suggestions);
+                        }
                     } catch (apiError) {
-                        console.error('Error during debounced API call:', apiError);
-                        await interaction.respond([]);
+                        console.error('Error during debounced API call:', apiError.message || apiError);
+                        if (!interaction.responded) {
+                            await interaction.respond([]).catch(() => {});
+                        }
                     } finally {
-                        // Once we're done, remove the timer from the Map
                         autocompleteDebounce.delete(userId);
                     }
                 }, DEBOUNCE_DELAY);
 
-                // 3. Store the new timer
                 autocompleteDebounce.set(userId, newTimer);
 
             } catch (error) {
-                console.error('Error in autocomplete handler:', error);
-                await interaction.respond([]); // Send empty on error
+                console.error('Error in autocomplete handler:', error.message || error);
+                if (!interaction.responded) {
+                    await interaction.respond([]).catch(() => {});
+                }
             }
             return; // Stop execution here
         }
@@ -88,28 +86,36 @@ export default {
 
 async function getYoutubeSuggestions(query) {
     try {
-        const response = await youtube.search.list({
-            part: 'snippet',
-            q: query,
-            type: 'video',
-            maxResults: 10, // You can change this, but Discord shows a max of 25
-        });
+        const url = new URL('https://www.googleapis.com/youtube/v3/search');
+        url.searchParams.append('part', 'snippet');
+        url.searchParams.append('q', query);
+        url.searchParams.append('type', 'video');
+        url.searchParams.append('maxResults', '10');
+        url.searchParams.append('key', config.YOUTUBE_API_KEY);
 
-        if (!response.data.items) {
+        const res = await fetch(url.toString());
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error(`YouTube API returned status ${res.status}: ${errText}`);
+            return [];
+        }
+
+        const data = await res.json();
+        if (!data?.items) {
             return [];
         }
 
         // Format the results for Discord's respond() method
-        return response.data.items.map((item) => {
+        return data.items.map((item) => {
             const title = item.snippet.title;
-            const url = `https://www.youtube.com/watch?v=${item.id.videoId}`;
+            const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
 
             return {
                 // 'name' is what the user *sees* (max 100 chars)
                 name: title.length > 100 ? title.substring(0, 97) + '...' : title,
 
                 // 'value' is what's sent to your 'play' command
-                value: url,
+                value: videoUrl,
             };
         });
     } catch (error) {
