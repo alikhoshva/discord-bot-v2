@@ -1,34 +1,25 @@
-# ==============================================================================
-# Stage 1: Builder - Install production dependencies
-# ==============================================================================
+# Stage 1: Build production dependencies
 FROM node:25-alpine AS builder
-
 WORKDIR /app
 
-# Copy package definition files
+# Copy dependency manifests and install production packages
 COPY package.json package-lock.json ./
-
-# Install production dependencies using fast, reproducible 'npm ci'
 RUN npm ci --only=production && npm cache clean --force
 
-# ==============================================================================
-# Stage 2: Runner - Production runtime
-# ==============================================================================
+# Stage 2: Minimal runtime image
 FROM node:25-alpine AS runner
 
-# Install runtime dependencies (ffmpeg for audio processing)
+# Install system dependencies (ffmpeg)
 RUN apk add --no-cache ffmpeg
 
 WORKDIR /app
 
-# Copy production node_modules from builder stage
-COPY --from=builder /app/node_modules ./node_modules
+# Copy built node_modules and application code with non-root ownership
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node . .
 
-# Copy application source code
-COPY . .
-
-# Set environment to production
+# Set environment, non-root user, and start command
 ENV NODE_ENV=production
+USER node
 
-# Start bot: deploy slash commands and run bot process
 CMD ["sh", "-c", "node deploy-commands.js && node index.js"]

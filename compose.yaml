@@ -6,6 +6,11 @@ services:
     depends_on:
       nodelink:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - CLIENT_ID=${CLIENT_ID}
@@ -29,6 +34,11 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - bot-network
     environment:
