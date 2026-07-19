@@ -1,32 +1,34 @@
-# 1. Use the lightweight Alpine image for production
-FROM node:22-alpine
+# ==============================================================================
+# Stage 1: Builder - Install production dependencies
+# ==============================================================================
+FROM node:25-alpine AS builder
 
-# 2. Install ffmpeg
-# In your devcontainer you used 'apt', but Alpine uses 'apk'.
-# We use --no-cache to keep the image small.
-RUN apk add --no-cache ffmpeg
-
-# 3. Set the working directory
 WORKDIR /app
 
-# 4. Copy package files named specifically
-# We do this BEFORE copying the rest of the code. 
-# Docker will cache this step. If you change code but not dependencies,
-# it won't have to re-install npm packages.
+# Copy package definition files
 COPY package.json package-lock.json ./
 
-# 5. Install dependencies
-# 'npm ci' is faster and more reliable than 'npm install' for production.
-# --only=production skips devDependencies (like eslint) to save space.
-RUN npm ci --only=production
+# Install production dependencies using fast, reproducible 'npm ci'
+RUN npm ci --only=production && npm cache clean --force
 
-# 6. Copy the rest of your bot's code
+# ==============================================================================
+# Stage 2: Runner - Production runtime
+# ==============================================================================
+FROM node:25-alpine AS runner
+
+# Install runtime dependencies (ffmpeg for audio processing)
+RUN apk add --no-cache ffmpeg
+
+WORKDIR /app
+
+# Copy production node_modules from builder stage
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy application source code
 COPY . .
 
-# 7. Set the environment to production
-# This tells libraries (like discord.js) to run in optimized mode.
+# Set environment to production
 ENV NODE_ENV=production
 
-# 8. Start the bot
-# We chain these commands to ensure slash commands update every time the container starts.
+# Start bot: deploy slash commands and run bot process
 CMD ["sh", "-c", "node deploy-commands.js && node index.js"]
