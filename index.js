@@ -1,11 +1,60 @@
 
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { Manager, Connectors } from 'moonlink.js';
+import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import config from './config.js';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
+
+// Global error guards
+process.on('unhandledRejection', (reason) => {
+	console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+	console.error('Uncaught Exception:', error);
+});
+
+// Internal healthcheck endpoint for Docker Compose
+const HEALTH_PORT = process.env.HEALTH_PORT || 8080;
+const healthServer = http.createServer((req, res) => {
+	if (req.url === '/health') {
+		if (client.isReady()) {
+			res.writeHead(200, { 'Content-Type': 'application/json' });
+			res.end(JSON.stringify({ status: 'ok', ping: client.ws.ping }));
+		} else {
+			res.writeHead(503, { 'Content-Type': 'application/json' });
+			res.end(JSON.stringify({ status: 'starting' }));
+		}
+	} else {
+		res.writeHead(404);
+		res.end();
+	}
+}).listen(HEALTH_PORT, '0.0.0.0', () => {
+	console.log(`Healthcheck server listening on port ${HEALTH_PORT}`);
+});
+
+// Graceful shutdown logic for Docker containers
+const gracefulShutdown = async (signal) => {
+	console.log(`Received ${signal}. Shutting down bot gracefully...`);
+	try {
+		healthServer.close();
+		if (client.manager?.players) {
+			for (const player of client.manager.players.values()) {
+				await player.destroy().catch(() => {});
+			}
+		}
+		client.destroy();
+	} catch (err) {
+		console.error('Error during graceful shutdown:', err);
+	}
+	process.exit(0);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 client.manager = new Manager({
 	// Configure the Lavalink nodes to connect to
