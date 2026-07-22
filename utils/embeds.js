@@ -12,7 +12,7 @@ export function buildNowPlayingEmbed(player, track) {
   const artwork = track.artworkUrl || track.thumbnail || null;
   const requester = track.requester ? `<@${track.requester}>` : 'Unknown';
   const author = track.author || track.artist || 'Unknown Artist';
-  const currentPos = player.position || 0;
+  const currentPos = player.current?.position ?? track?.position ?? 0;
   const totalDuration = track.duration || 0;
   const isPaused = player.paused || false;
   const isLooping = player.loop || player.repeat || false;
