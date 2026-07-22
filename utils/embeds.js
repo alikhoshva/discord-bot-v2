@@ -14,11 +14,23 @@ export function buildNowPlayingEmbed(player, track) {
   const author = track.author || track.artist || 'Unknown Artist';
   const currentPos = player.position || 0;
   const totalDuration = track.duration || 0;
+  const isPaused = player.paused || false;
+  const isLooping = player.loop || player.repeat || false;
+
+  let title = '🎵 Now Playing';
+  let color = Colors.BRAND;
+
+  if (isPaused) {
+    title = '⏸️ Playback Paused';
+    color = Colors.WARNING;
+  }
+
+  const loopBadge = isLooping ? ' • 🔁 Loop Mode: ON' : '';
 
   const embed = new EmbedBuilder()
-    .setTitle('🎵 Now Playing')
+    .setTitle(title)
     .setDescription(`**[${track.title}](${track.uri})**`)
-    .setColor(Colors.BRAND)
+    .setColor(color)
     .addFields(
       { name: 'Artist / Channel', value: author, inline: true },
       { name: 'Requested By', value: requester, inline: true },
@@ -33,11 +45,11 @@ export function buildNowPlayingEmbed(player, track) {
     const nextTrack = player.queue.tracks[0];
     const nextTitle = nextTrack.title.length > 40 ? `${nextTrack.title.slice(0, 37)}...` : nextTrack.title;
     embed.setFooter({
-      text: `Next Up: ${nextTitle} • ${player.queue.size} track(s) remaining`,
+      text: `Next Up: ${nextTitle} • ${player.queue.size} track(s) remaining${loopBadge}`,
     });
   } else {
     embed.setFooter({
-      text: 'No upcoming tracks in queue',
+      text: `Queue Empty • Add tracks with /play${loopBadge}`,
     });
   }
 
@@ -55,22 +67,23 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
   const totalTracks = player.queue.size;
   const totalPages = Math.ceil(totalTracks / itemsPerPage) || 1;
   const currentPage = Math.min(Math.max(page, 1), totalPages);
+  const isLooping = player.loop || player.repeat || false;
 
   const embed = new EmbedBuilder()
     .setTitle('📜 Current Music Queue')
     .setColor(Colors.BRAND);
 
   if (player.current) {
-    const requester = player.current.requester ? ` | Requested by: <@${player.current.requester}>` : '';
+    const requester = player.current.requester ? ` • <@${player.current.requester}>` : '';
     const currentTitle = player.current.title.length > 55
       ? `${player.current.title.slice(0, 52)}...`
       : player.current.title;
 
     embed.setDescription(
-      `**Now Playing:**\n[${currentTitle}](${player.current.uri}) | \`${formatDuration(player.current.duration)}\`${requester}`,
+      `**Now Playing:**\n[${currentTitle}](${player.current.uri}) \`[${formatDuration(player.current.duration)}]\`${requester}`,
     );
   } else {
-    embed.setDescription('Nothing is currently playing.');
+    embed.setDescription('*Nothing is currently playing.*');
   }
 
   if (totalTracks > 0) {
@@ -79,9 +92,9 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
 
     const tracksList = pageTracks.map((track, index) => {
       const globalIndex = startIndex + index + 1;
-      const requester = track.requester ? ` | <@${track.requester}>` : '';
+      const requester = track.requester ? ` • <@${track.requester}>` : '';
       const title = track.title.length > 45 ? `${track.title.slice(0, 42)}...` : track.title;
-      return `**${globalIndex}.** [${title}](${track.uri}) | \`${formatDuration(track.duration)}\`${requester}`;
+      return `**${globalIndex}.** [${title}](${track.uri}) \`[${formatDuration(track.duration)}]\`${requester}`;
     });
 
     let fieldValue = tracksList.join('\n');
@@ -95,8 +108,9 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
     });
 
     const totalDurationMs = (player.current?.duration || 0) + player.queue.duration;
+    const loopStatus = isLooping ? ' • 🔁 Loop: ON' : '';
     embed.setFooter({
-      text: `Page ${currentPage}/${totalPages} • ${totalTracks} track(s) in queue • Total Duration: ${formatDuration(totalDurationMs)}`,
+      text: `Page ${currentPage}/${totalPages} • ${totalTracks} track(s) in queue • Total: ${formatDuration(totalDurationMs)}${loopStatus}`,
     });
   } else {
     embed.addFields({
@@ -118,7 +132,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
  */
 export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
   const embed = new EmbedBuilder()
-    .setTitle(isNowPlaying ? '🎵 Now Playing' : '➕ Added to Queue')
+    .setTitle(isNowPlaying ? '🎵 Track Starting' : '➕ Added to Queue')
     .setDescription(`**[${track.title}](${track.uri})**`)
     .setColor(Colors.SUCCESS)
     .addFields(
@@ -127,7 +141,7 @@ export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
     );
 
   if (!isNowPlaying) {
-    embed.addFields({ name: 'Position in Queue', value: `${position}`, inline: true });
+    embed.addFields({ name: 'Position in Queue', value: `#${position}`, inline: true });
   }
 
   const artwork = track.artworkUrl || track.thumbnail;
@@ -148,7 +162,7 @@ export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
  */
 export function buildPlaylistAddedEmbed(playlistInfo, tracks, query, userId) {
   const embed = new EmbedBuilder()
-    .setTitle('🎶 Added Playlist to Queue')
+    .setTitle('🎶 Playlist Added to Queue')
     .setDescription(`**[${playlistInfo?.name || 'Playlist'}](${query})**`)
     .setColor(Colors.SUCCESS)
     .addFields(

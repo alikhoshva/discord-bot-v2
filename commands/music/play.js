@@ -93,6 +93,10 @@ async function execute(interaction, client) {
 
       await interaction.editReply({ embeds: [trackEmbed] });
 
+      if (isNowPlaying) {
+        setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+      }
+
       if (!player.playing) {
         await player.play();
       }

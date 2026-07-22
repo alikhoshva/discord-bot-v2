@@ -71,7 +71,11 @@ async function execute(interaction, client) {
     type: 'info',
   });
 
-  return interaction.reply({ embeds: [embed] });
+  const reply = await interaction.reply({ embeds: [embed], fetchReply: true });
+  setTimeout(() => {
+    interaction.deleteReply().catch(() => {});
+  }, 5000);
+  return reply;
 }
 
 export default {

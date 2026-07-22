@@ -97,9 +97,12 @@ client.manager.on('trackStart', async (player, track) => {
 		}
 	}
 	if (channel) {
+		if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
+			player.lastNowPlayingMessage.delete().catch(() => {});
+		}
 		const embed = buildNowPlayingEmbed(player, track);
 		const row = buildPlayerControls(player);
-		channel.send({ embeds: [embed], components: [row] });
+		player.lastNowPlayingMessage = await channel.send({ embeds: [embed], components: [row] });
 	}
 	if (player.idleTimeout) {
 		clearTimeout(player.idleTimeout);
@@ -136,7 +139,9 @@ async function startIdleTimer(player) {
 			description: 'Playback stopped. Disconnecting in 30 seconds if no new tracks are added.',
 			type: 'warning',
 		});
-		channel.send({ embeds: [warningEmbed] });
+		channel.send({ embeds: [warningEmbed] }).then((msg) => {
+			setTimeout(() => msg.delete().catch(() => {}), 5000);
+		}).catch(() => {});
 	}
 
 	player.idleTimeout = setTimeout(async () => {
@@ -159,7 +164,9 @@ async function startIdleTimer(player) {
 					description: 'Disconnected from voice channel due to inactivity.',
 					type: 'danger',
 				});
-				textChannel.send({ embeds: [disconnectEmbed] });
+				textChannel.send({ embeds: [disconnectEmbed] }).then((msg) => {
+					setTimeout(() => msg.delete().catch(() => {}), 5000);
+				}).catch(() => {});
 			}
 		}
 	}, 30000);

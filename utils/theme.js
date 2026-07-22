@@ -15,7 +15,7 @@ export const Colors = {
  * @returns {string} Formatted duration string
  */
 export function formatDuration(ms) {
-  if (!ms || isNaN(ms) || ms === Infinity) return 'Live Stream';
+  if (ms === undefined || ms === null || isNaN(ms) || ms === Infinity) return 'Live Stream';
   const totalSeconds = Math.floor(ms / 1000);
   const seconds = Math.floor(totalSeconds % 60);
   const minutes = Math.floor((totalSeconds / 60) % 60);
@@ -37,21 +37,22 @@ export function formatDuration(ms) {
  * @param {number} size Number of bar segments
  * @returns {string} Formatted progress bar string with timestamp
  */
-export function createProgressBar(currentMs = 0, totalMs = 0, size = 14) {
+export function createProgressBar(currentMs = 0, totalMs = 0, size = 12) {
   if (!totalMs || isNaN(totalMs) || totalMs === Infinity) {
     return '🔴 `LIVE STREAM`';
   }
 
   const current = Math.min(Math.max(currentMs, 0), totalMs);
+  const percentage = Math.round((current / totalMs) * 100);
   const progress = Math.round((size * current) / totalMs);
   const emptyProgress = size - progress;
 
-  const progressText = '═'.repeat(Math.max(0, progress));
-  const emptyProgressText = '─'.repeat(Math.max(0, emptyProgress));
+  const progressText = '▰'.repeat(Math.max(0, progress));
+  const emptyProgressText = '▱'.repeat(Math.max(0, emptyProgress));
 
-  const bar = `[${progressText}🔘${emptyProgressText}]`;
+  const bar = `${progressText}${emptyProgressText}`;
   const currentStr = formatDuration(current);
   const totalStr = formatDuration(totalMs);
 
-  return `${bar} \`${currentStr} / ${totalStr}\``;
+  return `${bar} **${percentage}%** \`[${currentStr} / ${totalStr}]\``;
 }

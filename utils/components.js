@@ -48,3 +48,44 @@ export function buildPlayerControls(player) {
     loopButton,
   );
 }
+
+/**
+ * Build pagination & control buttons for the music queue embed.
+ * @param {number} currentPage Current page number
+ * @param {number} totalPages Total pages available
+ * @returns {ActionRowBuilder} Discord action row containing queue navigation buttons
+ */
+export function buildQueueControls(currentPage = 1, totalPages = 1) {
+  const prevButton = new ButtonBuilder()
+    .setCustomId(`music_queue_prev_${currentPage}`)
+    .setLabel('Previous')
+    .setEmoji('◀️')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(currentPage <= 1);
+
+  const pageIndicator = new ButtonBuilder()
+    .setCustomId('music_queue_indicator')
+    .setLabel(`${currentPage} / ${totalPages}`)
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(true);
+
+  const nextButton = new ButtonBuilder()
+    .setCustomId(`music_queue_next_${currentPage}`)
+    .setLabel('Next')
+    .setEmoji('▶️')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(currentPage >= totalPages);
+
+  const refreshButton = new ButtonBuilder()
+    .setCustomId('music_queue_refresh')
+    .setLabel('Refresh')
+    .setEmoji('🔄')
+    .setStyle(ButtonStyle.Primary);
+
+  return new ActionRowBuilder().addComponents(
+    prevButton,
+    pageIndicator,
+    nextButton,
+    refreshButton,
+  );
+}

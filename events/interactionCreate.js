@@ -1,8 +1,8 @@
 // events/interactionCreate.js
 import { Events, MessageFlags } from 'discord.js';
 import config from './../config.js';
-import { buildQueueEmbed, buildStatusEmbed } from '../utils/embeds.js';
-import { buildPlayerControls } from '../utils/components.js';
+import { buildQueueEmbed, buildStatusEmbed, buildNowPlayingEmbed } from '../utils/embeds.js';
+import { buildPlayerControls, buildQueueControls } from '../utils/components.js';
 
 const autocompleteDebounce = new Map();
 const DEBOUNCE_DELAY = 300;
@@ -37,7 +37,7 @@ export default {
       return;
     }
 
-    // Handle Player Control Buttons
+    // Handle Player Control & Queue Pagination Buttons
     if (interaction.isButton()) {
       const customId = interaction.customId;
       if (!customId.startsWith('music_')) return;
@@ -58,6 +58,30 @@ export default {
       }
 
       try {
+        // Queue Pagination & Refresh Handling
+        if (
+          customId.startsWith('music_queue_prev_') ||
+          customId.startsWith('music_queue_next_') ||
+          customId === 'music_queue_refresh'
+        ) {
+          const itemsPerPage = 5;
+          const totalPages = Math.ceil(player.queue.size / itemsPerPage) || 1;
+          let targetPage = 1;
+
+          if (customId.startsWith('music_queue_prev_')) {
+            const currentPage = parseInt(customId.replace('music_queue_prev_', ''), 10) || 1;
+            targetPage = Math.max(1, currentPage - 1);
+          } else if (customId.startsWith('music_queue_next_')) {
+            const currentPage = parseInt(customId.replace('music_queue_next_', ''), 10) || 1;
+            targetPage = Math.min(totalPages, currentPage + 1);
+          }
+
+          const embed = buildQueueEmbed(player, targetPage, itemsPerPage);
+          const row = buildQueueControls(targetPage, totalPages);
+          await interaction.update({ embeds: [embed], components: [row] });
+          return;
+        }
+
         switch (customId) {
           case 'music_pause_resume': {
             const isPaused = player.paused;
@@ -69,7 +93,11 @@ export default {
             }
 
             const updatedRow = buildPlayerControls(player);
-            if (interaction.message?.editable) {
+            const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
+
+            if (interaction.message?.editable && updatedEmbed) {
+              await interaction.update({ embeds: [updatedEmbed], components: [updatedRow] });
+            } else if (interaction.message?.editable) {
               await interaction.update({ components: [updatedRow] });
             } else {
               await interaction.reply({
@@ -96,6 +124,9 @@ export default {
               type: 'info',
             });
             await interaction.reply({ embeds: [embed] });
+            setTimeout(() => {
+              interaction.deleteReply().catch(() => {});
+            }, 5000);
             break;
           }
 
@@ -113,12 +144,18 @@ export default {
               type: 'danger',
             });
             await interaction.reply({ embeds: [embed] });
+            setTimeout(() => {
+              interaction.deleteReply().catch(() => {});
+            }, 5000);
             break;
           }
 
           case 'music_queue': {
-            const embed = buildQueueEmbed(player, 1);
-            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+            const itemsPerPage = 5;
+            const totalPages = Math.ceil(player.queue.size / itemsPerPage) || 1;
+            const embed = buildQueueEmbed(player, 1, itemsPerPage);
+            const row = buildQueueControls(1, totalPages);
+            await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
             break;
           }
 
@@ -131,7 +168,11 @@ export default {
             }
 
             const updatedRow = buildPlayerControls(player);
-            if (interaction.message?.editable) {
+            const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
+
+            if (interaction.message?.editable && updatedEmbed) {
+              await interaction.update({ embeds: [updatedEmbed], components: [updatedRow] });
+            } else if (interaction.message?.editable) {
               await interaction.update({ components: [updatedRow] });
             } else {
               await interaction.reply({
