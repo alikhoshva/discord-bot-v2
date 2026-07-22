@@ -1,5 +1,5 @@
 // commands/play.js
-import { SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 
 const data = new SlashCommandBuilder()
   .setName('play') // Command name
@@ -12,6 +12,16 @@ const data = new SlashCommandBuilder()
         .setRequired(true) // Make the option required
         .setAutocomplete(true),
   );
+
+// Helper function to format duration in MS to HH:MM:SS
+function formatDuration(ms) {
+  if (!ms || isNaN(ms) || ms === Infinity) return 'Live Stream';
+  const seconds = Math.floor((ms / 1000) % 60);
+  const minutes = Math.floor((ms / (1000 * 60)) % 60);
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+
+  return `${hours ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
 
 async function execute(interaction, client) {
   // We defer the reply because searching for a song can take time.
@@ -50,38 +60,74 @@ async function execute(interaction, client) {
     requester: interaction.user.id,
   });
 
-
   // Step 6: Handle the search results.
-  if (!searchResult.tracks.length) {
+  if (!searchResult || !searchResult.tracks || !searchResult.tracks.length) {
     return interaction.editReply('No results found for your query.');
   }
 
+  // Ensure requester is set on each track
+  searchResult.tracks.forEach((t) => {
+    if (!t.requester) t.requester = interaction.user.id;
+  });
+
   // Step 7: Process the results.
   switch (searchResult.loadType) {
-    case 'playlist':
+    case 'playlist': {
       player.queue.add(searchResult.tracks);
 
-      await interaction.editReply({
-        content: `Added playlist **${searchResult.playlistInfo.name}** with ${searchResult.tracks.length} tracks to the queue.`,
-      });
+      const playlistEmbed = new EmbedBuilder()
+        .setTitle('Added Playlist to Queue')
+        .setDescription(`**[${searchResult.playlistInfo.name}](${query})**`)
+        .addFields(
+          { name: 'Tracks Added', value: `${searchResult.tracks.length}`, inline: true },
+          { name: 'Requested By', value: `<@${interaction.user.id}>`, inline: true },
+        )
+        .setColor('#0099ff');
+
+      const firstTrack = searchResult.tracks[0];
+      if (firstTrack?.artworkUrl || firstTrack?.thumbnail) {
+        playlistEmbed.setThumbnail(firstTrack.artworkUrl || firstTrack.thumbnail);
+      }
+
+      await interaction.editReply({ embeds: [playlistEmbed] });
 
       if (!player.playing) {
         await player.play();
       }
       break;
+    }
 
     case 'search':
-    case 'track':
-      player.queue.add(searchResult.tracks[0]);
+    case 'track': {
+      const track = searchResult.tracks[0];
+      const isNowPlaying = !player.playing && !player.current;
 
-      await interaction.editReply({
-        content: `Added **${searchResult.tracks[0].title}** to the queue.`,
-      });
+      player.queue.add(track);
+
+      const trackEmbed = new EmbedBuilder()
+        .setTitle(isNowPlaying ? 'Now Playing' : 'Added to Queue')
+        .setDescription(`**[${track.title}](${track.uri})**`)
+        .addFields(
+          { name: 'Duration', value: `\`${formatDuration(track.duration)}\``, inline: true },
+          { name: 'Requested By', value: `<@${interaction.user.id}>`, inline: true },
+        )
+        .setColor('#0099ff');
+
+      if (!isNowPlaying) {
+        trackEmbed.addFields({ name: 'Position in Queue', value: `${player.queue.size}`, inline: true });
+      }
+
+      if (track.artworkUrl || track.thumbnail) {
+        trackEmbed.setThumbnail(track.artworkUrl || track.thumbnail);
+      }
+
+      await interaction.editReply({ embeds: [trackEmbed] });
 
       if (!player.playing) {
         await player.play();
       }
       break;
+    }
 
     case 'empty':
       await interaction.editReply('No matches found for your query!');

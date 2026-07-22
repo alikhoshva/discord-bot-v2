@@ -3,7 +3,14 @@ import { EmbedBuilder, SlashCommandBuilder, MessageFlags } from 'discord.js';
 
 const data = new SlashCommandBuilder()
   .setName('queue')
-  .setDescription('Show the current queue');
+  .setDescription('Show the current queue')
+  .addIntegerOption((option) =>
+    option
+      .setName('page')
+      .setDescription('Page number to view')
+      .setRequired(false)
+      .setMinValue(1),
+  );
 
 function execute(interaction, client) {
   // Step 1: Get the player for this guild
@@ -25,8 +32,9 @@ function execute(interaction, client) {
     });
   }
 
-  // Step 4: Format duration for display (No change needed)
+  // Step 4: Format duration for display
   const formatDuration = (ms) => {
+    if (!ms || isNaN(ms) || ms === Infinity) return 'Live';
     const seconds = Math.floor((ms / 1000) % 60);
     const minutes = Math.floor((ms / (1000 * 60)) % 60);
     const hours = Math.floor(ms / (1000 * 60 * 60));
@@ -34,39 +42,49 @@ function execute(interaction, client) {
     return `${hours ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Step 5: Create an embed for the queue (No change needed)
+  // Step 5: Handle pagination calculations
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(player.queue.size / itemsPerPage) || 1;
+  const requestedPage = interaction.options.getInteger('page') || 1;
+  const page = Math.min(requestedPage, totalPages);
+
+  // Step 6: Create an embed for the queue
   const embed = new EmbedBuilder()
     .setTitle('Current Queue')
     .setColor('#0099ff');
 
-  // Step 6: Add the current track to the embed (No change needed)
+  // Step 7: Add the current track to the embed
   if (player.current) {
+    const requester = player.current.requester ? ` | Requested by: <@${player.current.requester}>` : '';
     embed.setDescription(
-      `**Now Playing:**\n[${player.current.title}](${player.current.uri}) | \`${formatDuration(player.current.duration)}\``,
+      `**Now Playing:**\n[${player.current.title}](${player.current.uri}) | \`${formatDuration(player.current.duration)}\`${requester}`,
     );
   }
 
-  // Step 7: Add the queue tracks to the embed (No change needed)
+  // Step 8: Add the queue tracks to the embed
   if (player.queue.size > 0) {
-    const tracks = player.queue.tracks.map((track, index) => {
-      return `${index + 1}. [${track.title}](${track.uri}) | \`${formatDuration(track.duration)}\``;
+    const startIndex = (page - 1) * itemsPerPage;
+    const pageTracks = player.queue.tracks.slice(startIndex, startIndex + itemsPerPage);
+
+    const tracks = pageTracks.map((track, index) => {
+      const globalIndex = startIndex + index + 1;
+      const requester = track.requester ? ` | <@${track.requester}>` : '';
+      return `${globalIndex}. [${track.title}](${track.uri}) | \`${formatDuration(track.duration)}\`${requester}`;
     });
 
     embed.addFields({
-      name: 'Up Next:',
-      value: tracks.slice(0, 10).join('\n'),
+      name: `Up Next (Page ${page}/${totalPages}):`,
+      value: tracks.join('\n'),
     });
 
-    // If there are more than 10 tracks, add a note
-    if (player.queue.size > 10) {
-      embed.addFields({
-        name: 'And more...',
-        value: `${player.queue.size - 10} more tracks in the queue`,
-      });
-    }
+    // Step 9: Add total queue summary in the footer
+    const totalDurationMs = (player.current?.duration || 0) + player.queue.duration;
+    embed.setFooter({
+      text: `Page ${page}/${totalPages} • ${player.queue.size} track(s) in queue • Total Duration: ${formatDuration(totalDurationMs)}`,
+    });
   }
 
-  // Step 8: Send the embed to the channel
+  // Step 10: Send the embed to the channel
   interaction.reply({ embeds: [embed] });
 }
 
