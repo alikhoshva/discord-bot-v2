@@ -42,8 +42,8 @@ function execute(interaction, client) {
     return `${hours ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Step 5: Handle pagination calculations
-  const itemsPerPage = 10;
+  // Step 5: Handle pagination calculations (5 tracks per page to stay under Discord's 1024-char field limit)
+  const itemsPerPage = 5;
   const totalPages = Math.ceil(player.queue.size / itemsPerPage) || 1;
   const requestedPage = interaction.options.getInteger('page') || 1;
   const page = Math.min(requestedPage, totalPages);
@@ -56,8 +56,12 @@ function execute(interaction, client) {
   // Step 7: Add the current track to the embed
   if (player.current) {
     const requester = player.current.requester ? ` | Requested by: <@${player.current.requester}>` : '';
+    const currentTitle = player.current.title.length > 60
+      ? `${player.current.title.slice(0, 57)}...`
+      : player.current.title;
+
     embed.setDescription(
-      `**Now Playing:**\n[${player.current.title}](${player.current.uri}) | \`${formatDuration(player.current.duration)}\`${requester}`,
+      `**Now Playing:**\n[${currentTitle}](${player.current.uri}) | \`${formatDuration(player.current.duration)}\`${requester}`,
     );
   }
 
@@ -69,12 +73,18 @@ function execute(interaction, client) {
     const tracks = pageTracks.map((track, index) => {
       const globalIndex = startIndex + index + 1;
       const requester = track.requester ? ` | <@${track.requester}>` : '';
-      return `${globalIndex}. [${track.title}](${track.uri}) | \`${formatDuration(track.duration)}\`${requester}`;
+      const title = track.title.length > 45 ? `${track.title.slice(0, 42)}...` : track.title;
+      return `${globalIndex}. [${title}](${track.uri}) | \`${formatDuration(track.duration)}\`${requester}`;
     });
+
+    let fieldValue = tracks.join('\n');
+    if (fieldValue.length > 1024) {
+      fieldValue = fieldValue.substring(0, 1020) + '...';
+    }
 
     embed.addFields({
       name: `Up Next (Page ${page}/${totalPages}):`,
-      value: tracks.join('\n'),
+      value: fieldValue,
     });
 
     // Step 9: Add total queue summary in the footer

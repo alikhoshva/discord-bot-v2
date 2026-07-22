@@ -131,14 +131,22 @@ async function execute(interaction, client) {
   // Step 9: Send rich embed confirmation
   const sampleList = tracks
     .slice(0, 5)
-    .map((t, i) => `${i + 1}. [${t.title}](${t.uri})`)
+    .map((t, i) => {
+      const title = t.title.length > 50 ? `${t.title.slice(0, 47)}...` : t.title;
+      return `${i + 1}. [${title}](${t.uri})`;
+    })
     .join('\n');
+
+  let previewValue = sampleList + (tracks.length > 5 ? '\n*...and more in `/queue`*' : '');
+  if (previewValue.length > 1024) {
+    previewValue = previewValue.substring(0, 1020) + '...';
+  }
 
   const embed = new EmbedBuilder()
     .setTitle('🎧 AI DJ Playlist Generated')
     .setDescription(`**Vibe:** "${query}"\nAdded **${tracks.length}** tracks to the queue.`)
     .addFields(
-      { name: 'Tracks Preview', value: sampleList + (tracks.length > 5 ? '\n*...and more in `/queue`*' : '') },
+      { name: 'Tracks Preview', value: previewValue },
       { name: 'Requested By', value: `<@${interaction.user.id}>`, inline: true },
     )
     .setColor('#0099ff');
