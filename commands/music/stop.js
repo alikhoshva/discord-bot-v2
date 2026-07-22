@@ -42,7 +42,10 @@ async function execute(interaction, client) {
     type: 'danger',
   });
 
-  return interaction.reply({ embeds: [embed] });
+  await interaction.reply({ embeds: [embed] });
+  setTimeout(() => {
+    interaction.deleteReply().catch(() => {});
+  }, 5000);
 }
 
 export default {

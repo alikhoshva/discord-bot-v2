@@ -60,6 +60,7 @@ async function execute(interaction, client) {
   // Step 6: Process results using unified embed builders
   switch (searchResult.loadType) {
     case 'playlist': {
+      const isNowPlaying = !player.playing && !player.current;
       player.queue.add(searchResult.tracks);
 
       const playlistEmbed = buildPlaylistAddedEmbed(
@@ -70,6 +71,10 @@ async function execute(interaction, client) {
       );
 
       await interaction.editReply({ embeds: [playlistEmbed] });
+
+      if (isNowPlaying) {
+        setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+      }
 
       if (!player.playing) {
         await player.play();

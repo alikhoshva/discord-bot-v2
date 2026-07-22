@@ -110,6 +110,7 @@ async function execute(interaction, client) {
     return interaction.editReply('Could not find any usable tracks for your playlist.');
   }
 
+  const isNowPlaying = !player.playing && !player.current;
   player.queue.add(tracks);
 
   if (!player.playing) {
@@ -118,6 +119,10 @@ async function execute(interaction, client) {
 
   const embed = buildAIDJEmbed(query, tracks, interaction.user.id);
   await interaction.editReply({ embeds: [embed] });
+
+  if (isNowPlaying) {
+    setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+  }
 }
 
 export default {

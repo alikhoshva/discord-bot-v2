@@ -16,8 +16,13 @@ export default {
       });
     }
 
+    if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
+      player.lastNowPlayingMessage.delete().catch(() => {});
+    }
+
     const embed = buildNowPlayingEmbed(player, player.current);
     const row = buildPlayerControls(player);
-    return interaction.reply({ embeds: [embed], components: [row] });
+    const replyMsg = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+    player.lastNowPlayingMessage = replyMsg;
   },
 };
