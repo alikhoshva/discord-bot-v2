@@ -1,10 +1,11 @@
-
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { Manager, Connectors } from 'moonlink.js';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import config from './config.js';
+import { buildNowPlayingEmbed, buildStatusEmbed } from './utils/embeds.js';
+import { buildPlayerControls } from './utils/components.js';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
@@ -57,24 +58,20 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 client.manager = new Manager({
-	// Configure the Lavalink nodes to connect to
 	nodes: [
 		{
-			host: config.lavalink.host,         // The hostname of your Lavalink server
-			port: config.lavalink.port,         // The port your Lavalink server is running on
-			password: config.lavalink.password, // The password for your Lavalink server
-			secure: config.lavalink.secure,     // Whether to use SSL/TLS for the connection
+			host: config.lavalink.host,
+			port: config.lavalink.port,
+			password: config.lavalink.password,
+			secure: config.lavalink.secure,
 		},
 	],
 	options: {
-        defaultPlayer: { autoPlay: false }
-    }
-
+		defaultPlayer: { autoPlay: false },
+	},
 });
 
-
 client.manager.use(new Connectors.DiscordJs(), client);
-
 
 // Node connection events
 client.manager.on('nodeConnect', (node) => {
@@ -91,7 +88,6 @@ client.manager.on('nodeError', (node, error) => {
 
 // Playback events
 client.manager.on('trackStart', async (player, track) => {
-	// Send a message when a track starts playing
 	let channel = client.channels.cache.get(player.textChannelId);
 	if (!channel) {
 		try {
@@ -101,77 +97,79 @@ client.manager.on('trackStart', async (player, track) => {
 		}
 	}
 	if (channel) {
-		channel.send(`Now playing: **${track.title}**`);
+		const embed = buildNowPlayingEmbed(player, track);
+		const row = buildPlayerControls(player);
+		channel.send({ embeds: [embed], components: [row] });
 	}
 	if (player.idleTimeout) {
-        clearTimeout(player.idleTimeout);
-        player.idleTimeout = null;
-    }
+		clearTimeout(player.idleTimeout);
+		player.idleTimeout = null;
+	}
 });
-
 
 client.manager.on('trackEnd', (player, track) => {
 	console.log(`Track ended: ${track.title}`);
 
 	if (player.queue.size === 0) {
-        startIdleTimer(player);
-    }
+		startIdleTimer(player);
+	}
 });
 
 client.manager.on('queueEnd', (player) => {
 	startIdleTimer(player);
 });
 
-
 async function startIdleTimer(player) {
-    // Prevent multiple timers from running at the same time
-    if (player.idleTimeout) return; 
+	if (player.idleTimeout) return;
 
-    let channel = client.channels.cache.get(player.textChannelId);
-    if (!channel) {
-        try {
-            channel = await client.channels.fetch(player.textChannelId);
-        } catch (error) {
-            console.error(`Failed to fetch text channel: ${error}`);
-        }
-    }
-    if (channel) {
-        channel.send('Playback stopped. Disconnecting in 30 seconds if no new tracks are added.');
-    }
+	let channel = client.channels.cache.get(player.textChannelId);
+	if (!channel) {
+		try {
+			channel = await client.channels.fetch(player.textChannelId);
+		} catch (error) {
+			console.error(`Failed to fetch text channel: ${error}`);
+		}
+	}
+	if (channel) {
+		const warningEmbed = buildStatusEmbed({
+			title: '⏸️ Playback Idle',
+			description: 'Playback stopped. Disconnecting in 30 seconds if no new tracks are added.',
+			type: 'warning',
+		});
+		channel.send({ embeds: [warningEmbed] });
+	}
 
-    // Attach the timeout to the player object so we can clear it later
-    player.idleTimeout = setTimeout(async () => {
-        // Check if the player is still in the manager
-        const activePlayer = client.manager.players.get(player.guildId);
-        if (!activePlayer) return;
+	player.idleTimeout = setTimeout(async () => {
+		const activePlayer = client.manager.players.get(player.guildId);
+		if (!activePlayer) return;
 
-        // Double check that it's still idle before destroying
-        if (!activePlayer.playing && activePlayer.queue.size === 0) {
-            await activePlayer.destroy();
-            let textChannel = client.channels.cache.get(activePlayer.textChannelId);
-            if (!textChannel) {
-                try {
-                    textChannel = await client.channels.fetch(activePlayer.textChannelId);
-                } catch (error) {
-                    console.error(`Failed to fetch text channel: ${error}`);
-                }
-            }
-            if (textChannel) {
-                textChannel.send('Disconnected due to inactivity.');
-            }
-        }
-    }, 30000); // 30 seconds
+		if (!activePlayer.playing && activePlayer.queue.size === 0) {
+			await activePlayer.destroy();
+			let textChannel = client.channels.cache.get(activePlayer.textChannelId);
+			if (!textChannel) {
+				try {
+					textChannel = await client.channels.fetch(activePlayer.textChannelId);
+				} catch (error) {
+					console.error(`Failed to fetch text channel: ${error}`);
+				}
+			}
+			if (textChannel) {
+				const disconnectEmbed = buildStatusEmbed({
+					title: '🔌 Disconnected',
+					description: 'Disconnected from voice channel due to inactivity.',
+					type: 'danger',
+				});
+				textChannel.send({ embeds: [disconnectEmbed] });
+			}
+		}
+	}, 30000);
 }
-
 
 client.commands = new Collection();
 
-import { fileURLToPath, pathToFileURL } from 'node:url'; // <-- Import this
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-// 1. Get the current file's path
 const __filename = fileURLToPath(import.meta.url);
-
-// 2. Get the directory name from the file's path
 const __dirname = path.dirname(__filename);
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -182,12 +180,11 @@ for (const folder of commandFolders) {
 
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
-		const fileURL = pathToFileURL(filePath); // 1. Convert path to URL
+		const fileURL = pathToFileURL(filePath);
 
-		const commandModule = await import(fileURL); // 2. Use await import()
-		const command = commandModule.default; // 3. Access the 'default' export
+		const commandModule = await import(fileURL);
+		const command = commandModule.default;
 
-		// Set a new item in the Collection...
 		if (command && 'data' in command && 'execute' in command) {
 			client.commands.set(command.data.name, command);
 		} else {
@@ -195,24 +192,20 @@ for (const folder of commandFolders) {
 		}
 	}
 }
-const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
-// Register each event handler
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.js'));
+
 for (const file of eventFiles) {
 	const relativeFilePath = `./events/${file}`;
 	const eventModule = await import(relativeFilePath);
 
 	const event = eventModule.default;
 	if (event.once) {
-		// For events that should only trigger once
 		client.once(event.name, (...args) => event.execute(...args, client));
 	} else {
-		// For events that can trigger multiple times
 		client.on(event.name, (...args) => event.execute(...args, client));
 	}
 }
 
-
-// Log in to Discord with your client's token
 client.login(config.token);

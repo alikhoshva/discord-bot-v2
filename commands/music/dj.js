@@ -1,7 +1,8 @@
-// commands/dj.js
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+// commands/music/dj.js
+import { SlashCommandBuilder } from 'discord.js';
 import { GoogleGenAI } from '@google/genai';
 import config from '../../config.js';
+import { buildAIDJEmbed } from '../../utils/embeds.js';
 
 const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
 
@@ -22,39 +23,33 @@ Example of a valid response:
 ***ABSOLUTELY DO NOT*** include any commentary, explanatory text, titles, markdown quotes, or any other non-JSON characters outside of the array. The response must start with '[' and end with ']'.`;
 
 const data = new SlashCommandBuilder()
-  .setName('dj') // Command name
-  .setDescription('Creates a playlist using Gemini based on your prompt') // Command description
-  .addStringOption(
-    (option) =>
-      option
-        .setName('prompt') // Option name
-        .setDescription('The theme or vibe for the playlist') // Option description
-        .setRequired(true), // Make the option required
+  .setName('dj')
+  .setDescription('Creates a playlist using Gemini based on your prompt')
+  .addStringOption((option) =>
+    option
+      .setName('prompt')
+      .setDescription('The theme or vibe for the playlist')
+      .setRequired(true),
   );
 
 async function execute(interaction, client) {
-  // We defer the reply because searching for a song can take time.
   await interaction.deferReply();
 
-  // Step 1: Check if the user is in a voice channel.
   const { channel } = interaction.member.voice;
   if (!channel) {
     return interaction.editReply('You need to join a voice channel first!');
   }
 
-  // Check if the bot is already playing/connected in another voice channel
   const existingPlayer = client.manager.players.get(interaction.guild.id);
   if (existingPlayer && existingPlayer.voiceChannelId && channel.id !== existingPlayer.voiceChannelId) {
     return interaction.editReply('You need to be in the same voice channel as the bot to use this command!');
   }
 
-  // Step 2: Get the search query from the command's *options*.
   const query = interaction.options.getString('prompt');
   let playlist;
 
   try {
     console.log(`Generating playlist for: "${query}"...`);
-
     const randomSeed = Math.floor(Math.random() * 1000000);
 
     const response = await ai.models.generateContent({
@@ -80,7 +75,6 @@ async function execute(interaction, client) {
     return interaction.editReply('There was an error generating the playlist from the AI.');
   }
 
-  // Step 3: Create a player for the guild.
   const player = client.manager.players.create({
     guildId: interaction.guild.id,
     voiceChannelId: channel.id,
@@ -88,12 +82,9 @@ async function execute(interaction, client) {
     autoPlay: false,
   });
 
-  // Step 4: Connect to the voice channel.
   await player.connect();
 
-  // Step 5: Search for all tracks in parallel
   console.log('Searching for all tracks in parallel...');
-
   const searchPromises = playlist.map((song) =>
     client.manager.search({
       query: song,
@@ -103,7 +94,6 @@ async function execute(interaction, client) {
 
   const searchResults = await Promise.all(searchPromises);
 
-  // Step 6: Filter out bad results & attach requester to tracks
   const tracks = searchResults
     .map((res) => {
       if (!res || !res.tracks.length || res.loadType === 'empty' || res.loadType === 'error') {
@@ -120,37 +110,13 @@ async function execute(interaction, client) {
     return interaction.editReply('Could not find any usable tracks for your playlist.');
   }
 
-  // Step 7: Add all found tracks to the queue
   player.queue.add(tracks);
 
-  // Step 8: Start the player if it's not already playing
   if (!player.playing) {
     await player.play();
   }
 
-  // Step 9: Send rich embed confirmation
-  const sampleList = tracks
-    .slice(0, 5)
-    .map((t, i) => {
-      const title = t.title.length > 50 ? `${t.title.slice(0, 47)}...` : t.title;
-      return `${i + 1}. [${title}](${t.uri})`;
-    })
-    .join('\n');
-
-  let previewValue = sampleList + (tracks.length > 5 ? '\n*...and more in `/queue`*' : '');
-  if (previewValue.length > 1024) {
-    previewValue = previewValue.substring(0, 1020) + '...';
-  }
-
-  const embed = new EmbedBuilder()
-    .setTitle('🎧 AI DJ Playlist Generated')
-    .setDescription(`**Vibe:** "${query}"\nAdded **${tracks.length}** tracks to the queue.`)
-    .addFields(
-      { name: 'Tracks Preview', value: previewValue },
-      { name: 'Requested By', value: `<@${interaction.user.id}>`, inline: true },
-    )
-    .setColor('#0099ff');
-
+  const embed = buildAIDJEmbed(query, tracks, interaction.user.id);
   await interaction.editReply({ embeds: [embed] });
 }
 
