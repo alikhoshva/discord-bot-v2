@@ -2,6 +2,7 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { buildStatusEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('skip')
@@ -56,11 +57,7 @@ async function execute(interaction, client) {
     type: 'info',
   });
 
-  const reply = await interaction.reply({ embeds: [embed], fetchReply: true });
-  setTimeout(() => {
-    interaction.deleteReply().catch(() => {});
-  }, 5000);
-  return reply;
+  return sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
 }
 
 export default {

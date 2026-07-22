@@ -3,6 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { buildStatusEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
 import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('stop')
@@ -29,10 +30,7 @@ async function execute(interaction, client) {
     type: 'danger',
   });
 
-  await interaction.reply({ embeds: [embed] });
-  setTimeout(() => {
-    interaction.deleteReply().catch(() => {});
-  }, 5000);
+  return sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
 }
 
 export default {

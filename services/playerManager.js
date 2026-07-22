@@ -4,6 +4,7 @@ import config from '../config.js';
 import { buildNowPlayingEmbed, buildStatusEmbed } from '../utils/embeds.js';
 import { buildPlayerControls } from '../utils/components.js';
 import { getTextChannel, cleanupLastNowPlaying } from '../utils/playerHelpers.js';
+import { sendTemporaryMessage } from './messageService.js';
 
 /**
  * Initialize Moonlink Audio Manager and attach event listeners to Discord client.
@@ -88,9 +89,7 @@ export async function startIdleTimer(player, client) {
       description: 'Playback stopped. Disconnecting in 30 seconds if no new tracks are added.',
       type: 'warning',
     });
-    channel.send({ embeds: [warningEmbed] }).then((msg) => {
-      setTimeout(() => msg.delete().catch(() => {}), 5000);
-    }).catch(() => {});
+    await sendTemporaryMessage(channel, { embeds: [warningEmbed] }, 5000);
   }
 
   player.idleTimeout = setTimeout(async () => {
@@ -106,9 +105,7 @@ export async function startIdleTimer(player, client) {
           description: 'Disconnected from voice channel due to inactivity.',
           type: 'danger',
         });
-        textChannel.send({ embeds: [disconnectEmbed] }).then((msg) => {
-          setTimeout(() => msg.delete().catch(() => {}), 5000);
-        }).catch(() => {});
+        await sendTemporaryMessage(textChannel, { embeds: [disconnectEmbed] }, 5000);
       }
     }
   }, 30000);

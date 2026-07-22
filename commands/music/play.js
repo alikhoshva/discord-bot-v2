@@ -2,6 +2,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { buildTrackAddedEmbed, buildPlaylistAddedEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('play')
@@ -63,10 +64,10 @@ async function execute(interaction, client) {
         interaction.user.id,
       );
 
-      await interaction.editReply({ embeds: [playlistEmbed] });
-
       if (isNowPlaying) {
-        setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+        await sendTemporaryReply(interaction, { embeds: [playlistEmbed] }, 5000);
+      } else {
+        await interaction.editReply({ embeds: [playlistEmbed] });
       }
 
       if (!player.playing) {
@@ -89,10 +90,10 @@ async function execute(interaction, client) {
         interaction.user.id,
       );
 
-      await interaction.editReply({ embeds: [trackEmbed] });
-
       if (isNowPlaying) {
-        setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+        await sendTemporaryReply(interaction, { embeds: [trackEmbed] }, 5000);
+      } else {
+        await interaction.editReply({ embeds: [trackEmbed] });
       }
 
       if (!player.playing) {

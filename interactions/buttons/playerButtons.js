@@ -3,6 +3,7 @@ import { MessageFlags } from 'discord.js';
 import { buildStatusEmbed, buildNowPlayingEmbed, buildQueueEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls, buildQueueControls } from '../../utils/components.js';
 import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 /**
  * Handle player control button interactions (Pause/Resume, Skip, Stop, Queue, Loop).
@@ -53,10 +54,7 @@ export async function handlePlayerButtons(interaction, player) {
         description: `Skipped: **${skippedTitle}**`,
         type: 'info',
       });
-      await interaction.reply({ embeds: [embed] });
-      setTimeout(() => {
-        interaction.deleteReply().catch(() => {});
-      }, 5000);
+      await sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
       break;
     }
 
@@ -74,10 +72,7 @@ export async function handlePlayerButtons(interaction, player) {
         description: 'Cleared queue and disconnected from channel.',
         type: 'danger',
       });
-      await interaction.reply({ embeds: [embed] });
-      setTimeout(() => {
-        interaction.deleteReply().catch(() => {});
-      }, 5000);
+      await sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
       break;
     }
 

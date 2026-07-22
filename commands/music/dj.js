@@ -3,6 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { generateDJPlaylist } from '../../services/geminiService.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
 import { buildAIDJEmbed } from '../../utils/embeds.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('dj')
@@ -74,10 +75,10 @@ async function execute(interaction, client) {
   }
 
   const embed = buildAIDJEmbed(query, tracks, interaction.user.id);
-  await interaction.editReply({ embeds: [embed] });
-
   if (isNowPlaying) {
-    setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+    await sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
+  } else {
+    await interaction.editReply({ embeds: [embed] });
   }
 }
 
