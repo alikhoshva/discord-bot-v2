@@ -23,6 +23,11 @@ async function execute(interaction, client) {
     });
   }
 
+  if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
+    player.lastNowPlayingMessage.delete().catch(() => {});
+    player.lastNowPlayingMessage = null;
+  }
+
   player.queue.clear();
 
   if (typeof player.destroy === 'function') {

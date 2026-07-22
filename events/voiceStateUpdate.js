@@ -19,6 +19,10 @@ export default {
                         clearTimeout(player.idleTimeout);
                         player.idleTimeout = null;
                     }
+                    if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
+                        player.lastNowPlayingMessage.delete().catch(() => {});
+                        player.lastNowPlayingMessage = null;
+                    }
                     await player.destroy();
                     console.log(`Successfully cleaned up and destroyed the player for guild ${oldState.guild.name}`);
                 } catch (error) {

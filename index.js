@@ -122,6 +122,14 @@ client.manager.on('queueEnd', (player) => {
 	startIdleTimer(player);
 });
 
+client.manager.on('playerDestroy', (player) => {
+	if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
+		player.lastNowPlayingMessage.delete().catch(() => {});
+		player.lastNowPlayingMessage = null;
+	}
+});
+
+
 async function startIdleTimer(player) {
 	if (player.idleTimeout) return;
 
