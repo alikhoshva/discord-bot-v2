@@ -1,6 +1,7 @@
 // commands/music/play.js
 import { SlashCommandBuilder } from 'discord.js';
 import { buildTrackAddedEmbed, buildPlaylistAddedEmbed } from '../../utils/embeds.js';
+import { validateVoicePermissions } from '../../utils/voiceGuard.js';
 
 const data = new SlashCommandBuilder()
   .setName('play')
@@ -16,22 +17,14 @@ const data = new SlashCommandBuilder()
 async function execute(interaction, client) {
   await interaction.deferReply();
 
-  // Step 1: Check if the user is in a voice channel
-  const { channel } = interaction.member.voice;
-  if (!channel) {
-    return interaction.editReply('You need to join a voice channel first!');
-  }
+  // Step 1: Validate voice permissions and channel match
+  const voiceState = await validateVoicePermissions(interaction, client);
+  if (!voiceState) return;
 
-  // Check if the bot is already playing/connected in another voice channel
-  const existingPlayer = client.manager.players.get(interaction.guild.id);
-  if (existingPlayer && existingPlayer.voiceChannelId && channel.id !== existingPlayer.voiceChannelId) {
-    return interaction.editReply('You need to be in the same voice channel as the bot to use this command!');
-  }
-
-  // Step 2: Get the search query
+  const { channel } = voiceState;
   const query = interaction.options.getString('song');
 
-  // Step 3: Create player
+  // Step 2: Create player
   const player = client.manager.players.create({
     guildId: interaction.guild.id,
     voiceChannelId: channel.id,
@@ -39,10 +32,10 @@ async function execute(interaction, client) {
     autoPlay: false,
   });
 
-  // Step 4: Connect to voice channel
+  // Step 3: Connect to voice channel
   await player.connect();
 
-  // Step 5: Search track
+  // Step 4: Search track
   const searchResult = await client.manager.search({
     query: query,
     requester: interaction.user.id,
@@ -57,7 +50,7 @@ async function execute(interaction, client) {
     if (!t.requester) t.requester = interaction.user.id;
   });
 
-  // Step 6: Process results using unified embed builders
+  // Step 5: Process search load types
   switch (searchResult.loadType) {
     case 'playlist': {
       const isNowPlaying = !player.playing && !player.current;

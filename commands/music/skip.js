@@ -1,6 +1,7 @@
 // commands/music/skip.js
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { buildStatusEmbed } from '../../utils/embeds.js';
+import { validateVoicePermissions } from '../../utils/voiceGuard.js';
 
 const data = new SlashCommandBuilder()
   .setName('skip')
@@ -14,29 +15,13 @@ const data = new SlashCommandBuilder()
   );
 
 async function execute(interaction, client) {
-  const player = client.manager.players.get(interaction.guild.id);
+  const voiceState = await validateVoicePermissions(interaction, client, {
+    requirePlayer: true,
+    requirePlaying: true,
+  });
+  if (!voiceState) return;
 
-  if (!player) {
-    return interaction.reply({
-      content: 'There is nothing playing in this server!',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
-  if (interaction.member.voice.channel?.id !== player.voiceChannelId) {
-    return interaction.reply({
-      content: 'You need to be in the same voice channel as the bot to use this command!',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
-  if (!player.current) {
-    return interaction.reply({
-      content: 'There is nothing playing right now!',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
+  const { player } = voiceState;
   const amount = interaction.options.getInteger('number') || 1;
   const totalAvailable = player.queue.size + 1;
 

@@ -1,5 +1,6 @@
 // events/voiceStateUpdate.js
 import { Events } from 'discord.js';
+import { cleanupLastNowPlaying } from '../utils/playerHelpers.js';
 
 export default {
     name: Events.VoiceStateUpdate,
@@ -11,18 +12,14 @@ export default {
         // If the bot was in a channel but is no longer in one (disconnected)
         if (oldState.channelId && !newState.channelId) {
             console.log(`Bot was disconnected from voice channel in guild ${oldState.guild.name} (${oldState.guild.id})`);
-            const player = client.manager.players.get(oldState.guild.id);
+            const player = client.manager?.players?.get(oldState.guild.id);
             if (player) {
                 try {
-                    // If there was an idle timer running, clear it
                     if (player.idleTimeout) {
                         clearTimeout(player.idleTimeout);
                         player.idleTimeout = null;
                     }
-                    if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
-                        player.lastNowPlayingMessage.delete().catch(() => {});
-                        player.lastNowPlayingMessage = null;
-                    }
+                    await cleanupLastNowPlaying(player);
                     await player.destroy();
                     console.log(`Successfully cleaned up and destroyed the player for guild ${oldState.guild.name}`);
                 } catch (error) {

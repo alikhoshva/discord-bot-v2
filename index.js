@@ -1,11 +1,10 @@
-import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
-import { Manager, Connectors } from 'moonlink.js';
+import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import config from './config.js';
-import { buildNowPlayingEmbed, buildStatusEmbed } from './utils/embeds.js';
-import { buildPlayerControls } from './utils/components.js';
+import { initPlayerManager } from './services/playerManager.js';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
@@ -57,132 +56,11 @@ const gracefulShutdown = async (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-client.manager = new Manager({
-	nodes: [
-		{
-			host: config.lavalink.host,
-			port: config.lavalink.port,
-			password: config.lavalink.password,
-			secure: config.lavalink.secure,
-		},
-	],
-	options: {
-		defaultPlayer: { autoPlay: false },
-	},
-});
+// Initialize Moonlink Audio Manager
+client.manager = initPlayerManager(client);
 
-client.manager.use(new Connectors.DiscordJs(), client);
-
-// Node connection events
-client.manager.on('nodeConnect', (node) => {
-	console.log(`Node ${node.identifier} connected`);
-});
-
-client.manager.on('nodeDisconnect', (node) => {
-	console.log(`Node ${node.identifier} disconnected`);
-});
-
-client.manager.on('nodeError', (node, error) => {
-	console.error(`Node ${node.identifier} encountered an error:`, error);
-});
-
-// Playback events
-client.manager.on('trackStart', async (player, track) => {
-	let channel = client.channels.cache.get(player.textChannelId);
-	if (!channel) {
-		try {
-			channel = await client.channels.fetch(player.textChannelId);
-		} catch (error) {
-			console.error(`Failed to fetch text channel: ${error}`);
-		}
-	}
-	if (channel) {
-		if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
-			player.lastNowPlayingMessage.delete().catch(() => {});
-		}
-		const embed = buildNowPlayingEmbed(player, track);
-		const row = buildPlayerControls(player);
-		player.lastNowPlayingMessage = await channel.send({ embeds: [embed], components: [row] });
-	}
-	if (player.idleTimeout) {
-		clearTimeout(player.idleTimeout);
-		player.idleTimeout = null;
-	}
-});
-
-client.manager.on('trackEnd', (player, track) => {
-	console.log(`Track ended: ${track.title}`);
-
-	if (player.queue.size === 0) {
-		startIdleTimer(player);
-	}
-});
-
-client.manager.on('queueEnd', (player) => {
-	startIdleTimer(player);
-});
-
-client.manager.on('playerDestroy', (player) => {
-	if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
-		player.lastNowPlayingMessage.delete().catch(() => {});
-		player.lastNowPlayingMessage = null;
-	}
-});
-
-
-async function startIdleTimer(player) {
-	if (player.idleTimeout) return;
-
-	let channel = client.channels.cache.get(player.textChannelId);
-	if (!channel) {
-		try {
-			channel = await client.channels.fetch(player.textChannelId);
-		} catch (error) {
-			console.error(`Failed to fetch text channel: ${error}`);
-		}
-	}
-	if (channel) {
-		const warningEmbed = buildStatusEmbed({
-			title: '⏸️ Playback Idle',
-			description: 'Playback stopped. Disconnecting in 30 seconds if no new tracks are added.',
-			type: 'warning',
-		});
-		channel.send({ embeds: [warningEmbed] }).then((msg) => {
-			setTimeout(() => msg.delete().catch(() => {}), 5000);
-		}).catch(() => {});
-	}
-
-	player.idleTimeout = setTimeout(async () => {
-		const activePlayer = client.manager.players.get(player.guildId);
-		if (!activePlayer) return;
-
-		if (!activePlayer.playing && activePlayer.queue.size === 0) {
-			await activePlayer.destroy();
-			let textChannel = client.channels.cache.get(activePlayer.textChannelId);
-			if (!textChannel) {
-				try {
-					textChannel = await client.channels.fetch(activePlayer.textChannelId);
-				} catch (error) {
-					console.error(`Failed to fetch text channel: ${error}`);
-				}
-			}
-			if (textChannel) {
-				const disconnectEmbed = buildStatusEmbed({
-					title: '🔌 Disconnected',
-					description: 'Disconnected from voice channel due to inactivity.',
-					type: 'danger',
-				});
-				textChannel.send({ embeds: [disconnectEmbed] }).then((msg) => {
-					setTimeout(() => msg.delete().catch(() => {}), 5000);
-				}).catch(() => {});
-			}
-		}
-	}, 30000);
-}
-
+// Dynamic Command Loader
 client.commands = new Collection();
-
-import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -208,6 +86,7 @@ for (const folder of commandFolders) {
 	}
 }
 
+// Dynamic Event Loader
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.js'));
 

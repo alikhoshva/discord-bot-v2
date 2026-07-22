@@ -1,33 +1,20 @@
 // commands/music/stop.js
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { buildStatusEmbed } from '../../utils/embeds.js';
+import { validateVoicePermissions } from '../../utils/voiceGuard.js';
+import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
 
 const data = new SlashCommandBuilder()
   .setName('stop')
   .setDescription('Stop playback and clear the queue');
 
 async function execute(interaction, client) {
-  const player = client.manager.players.get(interaction.guild.id);
+  const voiceState = await validateVoicePermissions(interaction, client, { requirePlayer: true });
+  if (!voiceState) return;
 
-  if (!player) {
-    return interaction.reply({
-      content: 'There is nothing playing in this server!',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
+  const { player } = voiceState;
 
-  if (interaction.member.voice.channel?.id !== player.voiceChannelId) {
-    return interaction.reply({
-      content: 'You need to be in the same voice channel as the bot to use this command!',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
-  if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
-    player.lastNowPlayingMessage.delete().catch(() => {});
-    player.lastNowPlayingMessage = null;
-  }
-
+  await cleanupLastNowPlaying(player);
   player.queue.clear();
 
   if (typeof player.destroy === 'function') {
