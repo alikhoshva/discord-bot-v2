@@ -1,15 +1,14 @@
 // events/ready.js
-import { Events } from 'discord.js'; // <-- 1. Import Events
+import { Events } from 'discord.js';
+import logger from '../utils/logger.js';
 
 export default {
-    name: Events.ClientReady, // <-- 2. Change this from 'ready'
-    once: true,
-    
-    execute(client) {
-        console.log(`Logged in as ${client.user.tag}`);
+  name: Events.ClientReady,
+  once: true,
 
-        // Initialize the Moonlink Manager with the bot's user ID
-
-        console.log('Moonlink Manager initialized');
-    }
+  execute(client) {
+    logger.info(`Logged in as ${client.user.tag}`);
+    logger.info('Moonlink Manager initialized');
+  },
 };
+

@@ -1,5 +1,5 @@
 // commands/music/queue.js
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { buildQueueEmbed } from '../../utils/embeds.js';
 import { buildQueueControls } from '../../utils/components.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';

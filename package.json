@@ -4,19 +4,22 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/unit/**/*.test.js tests/integration/**/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage tests/unit/**/*.test.js tests/integration/**/*.test.js",
+    "test:stress": "node tests/stress/interactionStress.test.js",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@google/genai": "^1.28.0",
-    "discord.js": "^14.25.1",
-    "dotenv": "^17.2.3",
+    "@google/genai": "^2.13.0",
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
     "moonlink.js": "^5.2.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.38.0",
-    "eslint": "^9.38.0"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5"
   }
 }

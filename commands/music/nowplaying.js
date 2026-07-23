@@ -2,12 +2,12 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { buildNowPlayingEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls } from '../../utils/components.js';
-import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
+import { cleanupLastNowPlaying } from '../../services/playerManager.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('nowplaying')
-    .setDescription('Displays the currently playing song with visual progress'),
+    .setDescription('Displays the currently playing song details'),
   async execute(interaction, client) {
     const player = client.manager?.players?.get(interaction.guild.id);
     if (!player || !player.current) {

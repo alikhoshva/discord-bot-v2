@@ -1,5 +1,6 @@
 // commands/music/dj.js
 import { SlashCommandBuilder } from 'discord.js';
+import logger from '../../utils/logger.js';
 import { generateDJPlaylist } from '../../services/geminiService.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
 import { buildAIDJEmbed } from '../../utils/embeds.js';
@@ -28,7 +29,7 @@ async function execute(interaction, client) {
   try {
     playlist = await generateDJPlaylist(query);
   } catch (error) {
-    console.error('Error generating playlist via AI:', error);
+    logger.error('Error generating playlist via AI:', error);
     return interaction.editReply('There was an error generating the playlist from the AI.');
   }
 
@@ -41,7 +42,7 @@ async function execute(interaction, client) {
 
   await player.connect();
 
-  console.log('Searching for all tracks in parallel...');
+  logger.info('Searching for all tracks in parallel...');
   const searchPromises = playlist.map((song) =>
     client.manager.search({
       query: song,
@@ -54,7 +55,7 @@ async function execute(interaction, client) {
   const tracks = searchResults
     .map((res) => {
       if (!res || !res.tracks?.length || res.loadType === 'empty' || res.loadType === 'error') {
-        if (res?.error) console.warn(`Error loading a track: ${res.error}`);
+        if (res?.error) logger.warn(`Error loading a track: ${res.error}`);
         return null;
       }
       const track = res.tracks[0];

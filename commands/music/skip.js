@@ -36,13 +36,7 @@ async function execute(interaction, client) {
   const skippedTrackTitle = player.current.title;
 
   if (amount > 1) {
-    if (typeof player.queue.removeRange === 'function') {
-      player.queue.removeRange(0, amount - 1);
-    } else {
-      for (let i = 0; i < amount - 1; i++) {
-        player.queue.remove(0);
-      }
-    }
+    player.queue.removeRange(0, amount - 1);
   }
 
   await player.skip();

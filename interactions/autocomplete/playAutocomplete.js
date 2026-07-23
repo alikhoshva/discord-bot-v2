@@ -1,4 +1,5 @@
 // interactions/autocomplete/playAutocomplete.js
+import logger from '../../utils/logger.js';
 import { getYoutubeSuggestions } from '../../services/youtubeService.js';
 
 const autocompleteDebounce = new Map();
@@ -33,7 +34,7 @@ export async function handlePlayAutocomplete(interaction) {
           await interaction.respond(suggestions);
         }
       } catch (apiError) {
-        console.error('Error during debounced API call:', apiError.message || apiError);
+        logger.error('Error during debounced API call:', apiError.message || apiError);
         if (!interaction.responded) {
           await interaction.respond([]).catch(() => {});
         }
@@ -45,7 +46,7 @@ export async function handlePlayAutocomplete(interaction) {
     autocompleteDebounce.set(userId, newTimer);
 
   } catch (error) {
-    console.error('Error in autocomplete handler:', error.message || error);
+    logger.error('Error in autocomplete handler:', error.message || error);
     if (!interaction.responded) {
       await interaction.respond([]).catch(() => {});
     }

@@ -2,7 +2,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { buildStatusEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
-import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
+import { cleanupLastNowPlaying } from '../../services/playerManager.js';
 import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
@@ -18,11 +18,7 @@ async function execute(interaction, client) {
   await cleanupLastNowPlaying(player);
   player.queue.clear();
 
-  if (typeof player.destroy === 'function') {
-    await player.destroy();
-  } else {
-    await player.stop();
-  }
+  await player.destroy();
 
   const embed = buildStatusEmbed({
     title: '⏹️ Playback Stopped',
