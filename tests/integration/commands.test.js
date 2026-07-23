@@ -38,7 +38,7 @@ describe('Slash Command Integration Tests', () => {
       const reply = interaction._replies[0];
       assert.ok(reply.embeds && reply.embeds.length === 1);
       const embedData = reply.embeds[0].toJSON();
-      assert.strictEqual(embedData.title, '🏓 Pong!');
+      assert.strictEqual(embedData.title, 'Pong!');
     });
   });
 
