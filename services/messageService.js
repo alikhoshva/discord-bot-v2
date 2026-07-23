@@ -1,4 +1,5 @@
 // services/messageService.js
+import logger from '../utils/logger.js';
 
 /**
  * Send or edit an interaction reply and automatically schedule its deletion.
@@ -20,7 +21,7 @@ export async function sendTemporaryReply(interaction, payload, durationMs = 5000
       reply = await interaction.reply({ ...messageOptions, fetchReply: true });
     }
   } catch (error) {
-    console.error('Error sending temporary reply:', error);
+    logger.error('Error sending temporary reply:', error);
     return null;
   }
 
@@ -50,7 +51,7 @@ export async function sendTemporaryMessage(channel, payload, durationMs = 5000) 
     }, durationMs);
     return msg;
   } catch (error) {
-    console.error('Error sending temporary channel message:', error);
+    logger.error('Error sending temporary channel message:', error);
     return null;
   }
 }

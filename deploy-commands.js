@@ -1,5 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import config from './config.js';
+import logger from './utils/logger.js';
 import { readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -39,19 +40,19 @@ const rest = new REST().setToken(config.token);
                 if (command && 'data' in command && 'execute' in command) {
                     commands.push(command.data.toJSON());
                 } else {
-                    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+                    logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
                 }
             }
         }
 
-        console.log(`Started refreshing ${commands.length} application (/) commands.`);
+        logger.info(`Started refreshing ${commands.length} application (/) commands.`);
 
         // The put method is used to fully refresh all commands in the guild with the current set
         const data = await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body: commands });
 
-        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        logger.info(`Successfully reloaded ${data.length} application (/) commands.`);
     } catch (error) {
         // And of course, make sure you catch and log any errors!
-        console.error(error);
+        logger.error('Failed to deploy application commands:', error);
     }
 })();

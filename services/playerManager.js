@@ -1,6 +1,7 @@
 // services/playerManager.js
 import { Manager, Connectors } from 'moonlink.js';
 import config from '../config.js';
+import logger from '../utils/logger.js';
 import { buildNowPlayingEmbed, buildStatusEmbed } from '../utils/embeds.js';
 import { buildPlayerControls } from '../utils/components.js';
 import { sendTemporaryMessage } from './messageService.js';
@@ -18,7 +19,7 @@ export async function getTextChannel(client, channelId) {
     try {
       channel = await client.channels.fetch(channelId);
     } catch (error) {
-      console.error(`Failed to fetch text channel ${channelId}:`, error);
+      logger.error(`Failed to fetch text channel ${channelId}:`, error);
       return null;
     }
   }
@@ -61,15 +62,15 @@ export function initPlayerManager(client) {
 
   // Node connection events
   manager.on('nodeConnect', (node) => {
-    console.log(`Node ${node.identifier} connected`);
+    logger.info(`Node ${node.identifier} connected`);
   });
 
   manager.on('nodeDisconnect', (node) => {
-    console.log(`Node ${node.identifier} disconnected`);
+    logger.info(`Node ${node.identifier} disconnected`);
   });
 
   manager.on('nodeError', (node, error) => {
-    console.error(`Node ${node.identifier} encountered an error:`, error);
+    logger.error(`Node ${node.identifier} encountered an error:`, error);
   });
 
   // Track playback events
@@ -88,7 +89,7 @@ export function initPlayerManager(client) {
   });
 
   manager.on('trackEnd', (player, track) => {
-    console.log(`Track ended: ${track.title}`);
+    logger.info(`Track ended: ${track.title}`);
     if (player.queue.size === 0) {
       startIdleTimer(player, client);
     }

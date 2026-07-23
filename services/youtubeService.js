@@ -1,5 +1,6 @@
 // services/youtubeService.js
 import config from '../config.js';
+import logger from '../utils/logger.js';
 
 const MIN_QUERY_LENGTH = 3;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
@@ -32,7 +33,7 @@ export async function getYoutubeSuggestions(query) {
     const res = await fetch(url.toString());
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`YouTube API returned status ${res.status}: ${errText}`);
+      logger.error(`YouTube API returned status ${res.status}: ${errText}`);
       return [];
     }
 
@@ -63,7 +64,7 @@ export async function getYoutubeSuggestions(query) {
     suggestionCache.set(normalizedQuery, { timestamp: Date.now(), data: suggestions });
     return suggestions;
   } catch (error) {
-    console.error('Error fetching YouTube suggestions:', error.message || error);
+    logger.error('Error fetching YouTube suggestions:', error.message || error);
     return [];
   }
 }

@@ -1,6 +1,7 @@
 // services/geminiService.js
 import { GoogleGenAI, Type } from '@google/genai';
 import config from '../config.js';
+import logger from '../utils/logger.js';
 
 const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
 
@@ -15,7 +16,7 @@ Each element in the array MUST be a string in the format: "Song Name by Artist".
  * @returns {Promise<Array<string>>} Array of song strings ("Song Name by Artist")
  */
 export async function generateDJPlaylist(prompt) {
-  console.log(`Generating playlist for vibe: "${prompt}"...`);
+  logger.info(`Generating playlist for vibe: "${prompt}"...`);
   const randomSeed = Math.floor(Math.random() * 1000000);
 
   const response = await ai.models.generateContent({
