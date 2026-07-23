@@ -102,4 +102,21 @@ for (const file of eventFiles) {
 	}
 }
 
-client.login(config.token);
+const loginWithRetry = async (retries = 5, delayMs = 5000) => {
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			await client.login(config.token);
+			return;
+		} catch (err) {
+			console.error(`Login attempt ${attempt}/${retries} failed: ${err.message}`);
+			if (attempt === retries) {
+				console.error('Max login retries reached. Exiting...');
+				process.exit(1);
+			}
+			console.log(`Retrying in ${delayMs / 1000}s...`);
+			await new Promise((resolve) => setTimeout(resolve, delayMs));
+		}
+	}
+};
+
+loginWithRetry();
