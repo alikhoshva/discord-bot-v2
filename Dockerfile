@@ -17,6 +17,10 @@ COPY --chown=node:node . .
 
 # Set environment, non-root user, and start command
 ENV NODE_ENV=production
+
+# Ensure working directory and runtime folders are owned by node user
+RUN mkdir -p /app/.moonlink && chown -R node:node /app
+
 USER node
 
 CMD ["sh", "-c", "node deploy-commands.js && node index.js"]
