@@ -2,7 +2,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { buildStatusEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
-import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
+import { cleanupLastNowPlaying } from '../../services/playerManager.js';
 import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()

@@ -2,7 +2,7 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { buildNowPlayingEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls } from '../../utils/components.js';
-import { cleanupLastNowPlaying } from '../../utils/playerHelpers.js';
+import { cleanupLastNowPlaying } from '../../services/playerManager.js';
 
 export default {
   data: new SlashCommandBuilder()

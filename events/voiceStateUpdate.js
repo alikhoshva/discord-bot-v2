@@ -1,6 +1,6 @@
 // events/voiceStateUpdate.js
 import { Events } from 'discord.js';
-import { cleanupLastNowPlaying } from '../utils/playerHelpers.js';
+import { cleanupLastNowPlaying } from '../services/playerManager.js';
 
 export default {
     name: Events.VoiceStateUpdate,

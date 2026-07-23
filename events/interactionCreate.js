@@ -1,7 +1,6 @@
 // events/interactionCreate.js
 import { Events, MessageFlags } from 'discord.js';
 import { handlePlayerButtons } from '../interactions/buttons/playerButtons.js';
-import { handleQueuePagination } from '../interactions/buttons/queuePagination.js';
 import { handlePlayAutocomplete } from '../interactions/autocomplete/playAutocomplete.js';
 
 export default {
@@ -52,15 +51,7 @@ export default {
       }
 
       try {
-        if (
-          customId.startsWith('music_queue_prev_') ||
-          customId.startsWith('music_queue_next_') ||
-          customId === 'music_queue_refresh'
-        ) {
-          await handleQueuePagination(interaction, player);
-        } else {
-          await handlePlayerButtons(interaction, player);
-        }
+        await handlePlayerButtons(interaction, player);
       } catch (err) {
         console.error('Error handling button interaction:', err);
         if (!interaction.replied && !interaction.deferred) {
