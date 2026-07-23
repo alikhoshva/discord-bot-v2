@@ -32,26 +32,3 @@ export async function sendTemporaryReply(interaction, payload, durationMs = 5000
   return reply;
 }
 
-/**
- * Send a message to a text channel and automatically schedule its deletion.
- * @param {object} channel Discord text channel
- * @param {object|string} payload Message payload object or content string
- * @param {number} durationMs Time in ms before auto-deleting message (default 5000ms)
- * @returns {Promise<object|null>} The sent message object or null if failed
- */
-export async function sendTemporaryMessage(channel, payload, durationMs = 5000) {
-  if (!channel || typeof channel.send !== 'function') return null;
-
-  const messageOptions = typeof payload === 'string' ? { content: payload } : payload;
-
-  try {
-    const msg = await channel.send(messageOptions);
-    setTimeout(() => {
-      msg.delete().catch(() => {});
-    }, durationMs);
-    return msg;
-  } catch (error) {
-    logger.error('Error sending temporary channel message:', error);
-    return null;
-  }
-}

@@ -18,11 +18,7 @@ async function execute(interaction, client) {
   await cleanupLastNowPlaying(player);
   player.queue.clear();
 
-  if (typeof player.destroy === 'function') {
-    await player.destroy();
-  } else {
-    await player.stop();
-  }
+  await player.destroy();
 
   const embed = buildStatusEmbed({
     title: '⏹️ Playback Stopped',

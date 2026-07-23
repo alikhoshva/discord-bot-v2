@@ -4,7 +4,6 @@ import config from '../config.js';
 import logger from '../utils/logger.js';
 import { buildNowPlayingEmbed, buildStatusEmbed } from '../utils/embeds.js';
 import { buildPlayerControls } from '../utils/components.js';
-import { sendTemporaryMessage } from './messageService.js';
 
 /**
  * Safely fetch a text channel by ID using client cache or API fetch fallback.

@@ -2,7 +2,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { buildTrackAddedEmbed, buildPlaylistAddedEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
-import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('play')
@@ -25,7 +24,7 @@ async function execute(interaction, client) {
   const { channel } = voiceState;
   const query = interaction.options.getString('song');
 
-  // Step 2: Create player
+  // Step 2: Create player & connect
   const player = client.manager.players.create({
     guildId: interaction.guild.id,
     voiceChannelId: channel.id,
@@ -33,10 +32,9 @@ async function execute(interaction, client) {
     autoPlay: false,
   });
 
-  // Step 3: Connect to voice channel
   await player.connect();
 
-  // Step 4: Search track
+  // Step 3: Search track
   const searchResult = await client.manager.search({
     query: query,
     requester: interaction.user.id,
@@ -46,69 +44,47 @@ async function execute(interaction, client) {
     return interaction.editReply('No results found for your query.');
   }
 
-  // Ensure requester is set on each track
   searchResult.tracks.forEach((t) => {
     if (!t.requester) t.requester = interaction.user.id;
   });
 
-  // Step 5: Process search load types
-  switch (searchResult.loadType) {
-    case 'playlist': {
-      const isNowPlaying = !player.playing && !player.current;
-      player.queue.add(searchResult.tracks);
+  // Step 4: Add to queue & format response
+  const isNowPlaying = !player.playing && !player.current;
+  let embed;
 
-      const playlistEmbed = buildPlaylistAddedEmbed(
-        searchResult.playlistInfo,
-        searchResult.tracks,
-        query,
-        interaction.user.id,
-      );
+  if (searchResult.loadType === 'playlist') {
+    player.queue.add(searchResult.tracks);
+    embed = buildPlaylistAddedEmbed(
+      searchResult.playlistInfo,
+      searchResult.tracks,
+      query,
+      interaction.user.id,
+    );
+  } else if (searchResult.loadType === 'search' || searchResult.loadType === 'track') {
+    const track = searchResult.tracks[0];
+    player.queue.add(track);
+    embed = buildTrackAddedEmbed(
+      track,
+      player.queue.size,
+      isNowPlaying,
+      interaction.user.id,
+    );
+  } else if (searchResult.loadType === 'empty') {
+    return interaction.editReply('No matches found for your query!');
+  } else if (searchResult.loadType === 'error') {
+    return interaction.editReply(`An error occurred while loading the track: ${searchResult.error || 'Unknown error'}`);
+  }
 
-      if (isNowPlaying) {
-        await interaction.deleteReply().catch(() => {});
-      } else {
-        await interaction.editReply({ embeds: [playlistEmbed] });
-      }
-
-      if (!player.playing) {
-        await player.play();
-      }
-      break;
+  if (embed) {
+    if (isNowPlaying) {
+      await interaction.deleteReply().catch(() => {});
+    } else {
+      await interaction.editReply({ embeds: [embed] });
     }
+  }
 
-    case 'search':
-    case 'track': {
-      const track = searchResult.tracks[0];
-      const isNowPlaying = !player.playing && !player.current;
-
-      player.queue.add(track);
-
-      const trackEmbed = buildTrackAddedEmbed(
-        track,
-        player.queue.size,
-        isNowPlaying,
-        interaction.user.id,
-      );
-
-      if (isNowPlaying) {
-        await interaction.deleteReply().catch(() => {});
-      } else {
-        await interaction.editReply({ embeds: [trackEmbed] });
-      }
-
-      if (!player.playing) {
-        await player.play();
-      }
-      break;
-    }
-
-    case 'empty':
-      await interaction.editReply('No matches found for your query!');
-      break;
-
-    case 'error':
-      await interaction.editReply(`An error occurred while loading the track: ${searchResult.error || 'Unknown error'}`);
-      break;
+  if (!player.playing) {
+    await player.play();
   }
 }
 

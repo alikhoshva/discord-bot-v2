@@ -1,9 +1,8 @@
 // interactions/buttons/playerButtons.js
 import { MessageFlags } from 'discord.js';
-import { buildStatusEmbed, buildNowPlayingEmbed, buildQueueEmbed } from '../../utils/embeds.js';
+import { buildNowPlayingEmbed, buildQueueEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls, buildQueueControls } from '../../utils/components.js';
 import { cleanupLastNowPlaying } from '../../services/playerManager.js';
-import { sendTemporaryReply } from '../../services/messageService.js';
 
 /**
  * Handle player control and queue pagination button interactions.
@@ -40,12 +39,7 @@ export async function handlePlayerButtons(interaction, player) {
   switch (customId) {
     case 'music_pause_resume': {
       const isPaused = player.paused;
-      if (isPaused) {
-        if (typeof player.resume === 'function') await player.resume();
-        else await player.pause(false);
-      } else {
-        await player.pause(true);
-      }
+      await player.pause(!isPaused);
 
       const updatedRow = buildPlayerControls(player);
       const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
@@ -83,11 +77,7 @@ export async function handlePlayerButtons(interaction, player) {
     case 'music_stop': {
       await cleanupLastNowPlaying(player);
       player.queue.clear();
-      if (typeof player.destroy === 'function') {
-        await player.destroy();
-      } else {
-        await player.stop();
-      }
+      await player.destroy();
 
       await interaction.reply({
         content: 'Playback stopped and queue cleared.',
@@ -109,9 +99,6 @@ export async function handlePlayerButtons(interaction, player) {
       const currentLoop = player.loop || player.repeat || false;
       const newLoopState = !currentLoop;
       player.loop = newLoopState;
-      if (typeof player.setLoop === 'function') {
-        player.setLoop(newLoopState);
-      }
 
       const updatedRow = buildPlayerControls(player);
       const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
