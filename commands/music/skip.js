@@ -27,10 +27,11 @@ async function execute(interaction, client) {
   const totalAvailable = player.queue.size + 1;
 
   if (amount > totalAvailable) {
-    return interaction.reply({
-      content: `Cannot skip **${amount}** tracks. Only **${totalAvailable}** track(s) available.`,
-      flags: MessageFlags.Ephemeral,
-    });
+    return sendTemporaryReply(
+      interaction,
+      `Cannot skip **${amount}** tracks. Only **${totalAvailable}** track(s) available.`,
+      10000,
+    );
   }
 
   const skippedTrackTitle = player.current.title;
@@ -51,7 +52,7 @@ async function execute(interaction, client) {
     type: 'info',
   });
 
-  return sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
+  return sendTemporaryReply(interaction, { embeds: [embed] }, 10000);
 }
 
 export default {

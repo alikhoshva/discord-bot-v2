@@ -158,13 +158,26 @@ export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
  * @param {string} userId Requester user ID
  * @returns {EmbedBuilder}
  */
-export function buildPlaylistAddedEmbed(playlistInfo, tracks, query, userId) {
+export function buildPlaylistAddedEmbed(playlistInfo, tracks, query, userId, isAIDJ = false) {
+  const totalDurationMs = tracks.reduce((acc, t) => acc + (t.duration || 0), 0);
+  const title = isAIDJ ? '✨ AI DJ Playlist Added' : 'Playlist Added to Queue';
+  const color = isAIDJ ? Colors.AI_DJ : Colors.SUCCESS;
+
+  const isUrl = typeof query === 'string' && (query.startsWith('http://') || query.startsWith('https://'));
+  const playlistTitle = playlistInfo?.name || 'Playlist';
+  const description = isAIDJ
+    ? `**Vibe:** "${query}"`
+    : isUrl
+      ? `**[${playlistTitle}](${query})**`
+      : `**${playlistTitle}**`;
+
   const embed = new EmbedBuilder()
-    .setTitle('Playlist Added to Queue')
-    .setDescription(`**[${playlistInfo?.name || 'Playlist'}](${query})**`)
-    .setColor(Colors.SUCCESS)
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(color)
     .addFields(
       { name: 'Tracks Added', value: `${tracks.length}`, inline: true },
+      { name: 'Total Duration', value: `\`${formatDuration(totalDurationMs)}\``, inline: true },
       { name: 'Requested By', value: `<@${userId}>`, inline: true },
     );
 
@@ -185,27 +198,7 @@ export function buildPlaylistAddedEmbed(playlistInfo, tracks, query, userId) {
  * @returns {EmbedBuilder}
  */
 export function buildAIDJEmbed(prompt, tracks, userId) {
-  const sampleList = tracks
-    .slice(0, 5)
-    .map((t, i) => {
-      const title = t.title.length > 50 ? `${t.title.slice(0, 47)}...` : t.title;
-      return `**${i + 1}.** [${title}](${t.uri})`;
-    })
-    .join('\n');
-
-  let previewValue = sampleList + (tracks.length > 5 ? '\n*...and more in `/queue`*' : '');
-  if (previewValue.length > 1024) {
-    previewValue = previewValue.substring(0, 1020) + '...';
-  }
-
-  return new EmbedBuilder()
-    .setTitle('AI DJ Playlist Generated')
-    .setDescription(`**Vibe:** "${prompt}"\nAdded **${tracks.length}** tracks to the queue.`)
-    .addFields(
-      { name: 'Tracks Preview', value: previewValue },
-      { name: 'Requested By', value: `<@${userId}>`, inline: true },
-    )
-    .setColor(Colors.AI_DJ);
+  return buildPlaylistAddedEmbed({ name: prompt }, tracks, prompt, userId, true);
 }
 
 /**

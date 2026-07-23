@@ -1,8 +1,9 @@
 // commands/music/nowplaying.js
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { buildNowPlayingEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls } from '../../utils/components.js';
 import { cleanupLastNowPlaying } from '../../services/playerManager.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -11,10 +12,11 @@ export default {
   async execute(interaction, client) {
     const player = client.manager?.players?.get(interaction.guild.id);
     if (!player || !player.current) {
-      return interaction.reply({
-        content: 'There is nothing currently playing in this server!',
-        flags: MessageFlags.Ephemeral,
-      });
+      return sendTemporaryReply(
+        interaction,
+        'There is nothing currently playing in this server!',
+        10000,
+      );
     }
 
     await cleanupLastNowPlaying(player);

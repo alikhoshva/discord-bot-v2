@@ -3,6 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { buildQueueEmbed } from '../../utils/embeds.js';
 import { buildQueueControls } from '../../utils/components.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('queue')
@@ -31,7 +32,7 @@ async function execute(interaction, client) {
   const embed = buildQueueEmbed(player, currentPage, itemsPerPage);
   const row = buildQueueControls(currentPage, totalPages);
 
-  return interaction.reply({ embeds: [embed], components: [row] });
+  return sendTemporaryReply(interaction, { embeds: [embed], components: [row] }, 60000);
 }
 
 export default {

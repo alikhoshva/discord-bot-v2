@@ -8,7 +8,7 @@ import logger from '../utils/logger.js';
  * @param {number} durationMs Time in ms before auto-deleting message (default 5000ms)
  * @returns {Promise<object|null>} The sent message object or interaction response
  */
-export async function sendTemporaryReply(interaction, payload, durationMs = 5000) {
+export async function sendTemporaryReply(interaction, payload, durationMs = 10000) {
   if (!interaction) return null;
 
   const messageOptions = typeof payload === 'string' ? { content: payload } : payload;

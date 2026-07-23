@@ -1,8 +1,8 @@
 // interactions/buttons/playerButtons.js
-import { MessageFlags } from 'discord.js';
 import { buildNowPlayingEmbed, buildQueueEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls, buildQueueControls } from '../../utils/components.js';
 import { cleanupLastNowPlaying } from '../../services/playerManager.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 /**
  * Handle player control and queue pagination button interactions.
@@ -53,28 +53,23 @@ export async function handlePlayerButtons(interaction, player) {
       } else if (interaction.message?.editable) {
         await interaction.update({ components: [updatedRow] });
       } else {
-        await interaction.reply({
-          content: isPaused ? 'Resumed playback.' : 'Paused playback.',
-          flags: MessageFlags.Ephemeral,
-        });
+        await sendTemporaryReply(
+          interaction,
+          isPaused ? 'Resumed playback.' : 'Paused playback.',
+          10000,
+        );
       }
       break;
     }
 
     case 'music_skip': {
       if (!player.current && player.queue.size === 0) {
-        return interaction.reply({
-          content: 'No track available to skip!',
-          flags: MessageFlags.Ephemeral,
-        });
+        return sendTemporaryReply(interaction, 'No track available to skip!', 10000);
       }
       const skippedTitle = player.current?.title || 'Track';
       await player.skip();
 
-      await interaction.reply({
-        content: `Skipped **${skippedTitle}**.`,
-        flags: MessageFlags.Ephemeral,
-      });
+      await sendTemporaryReply(interaction, `Skipped **${skippedTitle}**.`, 10000);
       break;
     }
 
@@ -83,10 +78,7 @@ export async function handlePlayerButtons(interaction, player) {
       player.queue.clear();
       await player.destroy();
 
-      await interaction.reply({
-        content: 'Playback stopped and queue cleared.',
-        flags: MessageFlags.Ephemeral,
-      });
+      await sendTemporaryReply(interaction, 'Playback stopped and queue cleared.', 10000);
       break;
     }
 
@@ -95,7 +87,7 @@ export async function handlePlayerButtons(interaction, player) {
       const totalPages = Math.ceil(player.queue.size / itemsPerPage) || 1;
       const embed = buildQueueEmbed(player, 1, itemsPerPage);
       const row = buildQueueControls(1, totalPages);
-      await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
+      await sendTemporaryReply(interaction, { embeds: [embed], components: [row] }, 60000);
       break;
     }
 
@@ -112,10 +104,11 @@ export async function handlePlayerButtons(interaction, player) {
       } else if (interaction.message?.editable) {
         await interaction.update({ components: [updatedRow] });
       } else {
-        await interaction.reply({
-          content: newLoopState ? 'Loop mode **enabled**.' : 'Loop mode **disabled**.',
-          flags: MessageFlags.Ephemeral,
-        });
+        await sendTemporaryReply(
+          interaction,
+          newLoopState ? 'Loop mode **enabled**.' : 'Loop mode **disabled**.',
+          10000,
+        );
       }
       break;
     }

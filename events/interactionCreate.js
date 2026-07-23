@@ -1,8 +1,9 @@
 // events/interactionCreate.js
-import { Events, MessageFlags } from 'discord.js';
+import { Events } from 'discord.js';
 import logger from '../utils/logger.js';
 import { handlePlayerButtons } from '../interactions/buttons/playerButtons.js';
 import { handlePlayAutocomplete } from '../interactions/autocomplete/playAutocomplete.js';
+import { sendTemporaryReply } from '../services/messageService.js';
 
 export default {
   name: Events.InteractionCreate,
@@ -21,16 +22,11 @@ export default {
           userId: interaction.user?.id,
           commandName: interaction.commandName,
         });
-        const errorOptions = {
-          content: 'There was an error while executing this command!',
-          flags: MessageFlags.Ephemeral,
-        };
-
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp(errorOptions);
-        } else {
-          await interaction.reply(errorOptions);
-        }
+        await sendTemporaryReply(
+          interaction,
+          'There was an error while executing this command!',
+          10000,
+        );
       }
       return;
     }
@@ -42,17 +38,15 @@ export default {
 
       const player = client.manager?.players?.get(interaction.guild.id);
       if (!player) {
-        return interaction.reply({
-          content: 'There is nothing playing in this server!',
-          flags: MessageFlags.Ephemeral,
-        });
+        return sendTemporaryReply(interaction, 'There is nothing playing in this server!', 10000);
       }
 
       if (interaction.member?.voice?.channel?.id !== player.voiceChannelId) {
-        return interaction.reply({
-          content: 'You need to be in the same voice channel as the bot to use controls!',
-          flags: MessageFlags.Ephemeral,
-        });
+        return sendTemporaryReply(
+          interaction,
+          'You need to be in the same voice channel as the bot to use controls!',
+          10000,
+        );
       }
 
       try {
@@ -63,12 +57,11 @@ export default {
           userId: interaction.user?.id,
           customId,
         });
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({
-            content: 'An error occurred while executing player controls.',
-            flags: MessageFlags.Ephemeral,
-          });
-        }
+        await sendTemporaryReply(
+          interaction,
+          'An error occurred while executing player controls.',
+          10000,
+        );
       }
       return;
     }

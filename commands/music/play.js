@@ -2,6 +2,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { buildTrackAddedEmbed, buildPlaylistAddedEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
+import { sendTemporaryReply } from '../../services/messageService.js';
 
 const data = new SlashCommandBuilder()
   .setName('play')
@@ -79,7 +80,7 @@ async function execute(interaction, client) {
     if (isNowPlaying) {
       await interaction.deleteReply().catch(() => {});
     } else {
-      await interaction.editReply({ embeds: [embed] });
+      await sendTemporaryReply(interaction, { embeds: [embed] }, 10000);
     }
   }
 

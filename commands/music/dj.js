@@ -77,9 +77,9 @@ async function execute(interaction, client) {
 
   const embed = buildAIDJEmbed(query, tracks, interaction.user.id);
   if (isNowPlaying) {
-    await sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
+    await interaction.deleteReply().catch(() => {});
   } else {
-    await interaction.editReply({ embeds: [embed] });
+    await sendTemporaryReply(interaction, { embeds: [embed] }, 10000);
   }
 }
 

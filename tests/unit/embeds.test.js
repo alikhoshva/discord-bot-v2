@@ -107,7 +107,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildAIDJEmbed('80s synth wave', tracks, 'user_123');
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, 'AI DJ Playlist Generated');
+      assert.strictEqual(data.title, '✨ AI DJ Playlist Added');
       assert.ok(data.description.includes('80s synth wave'));
       assert.strictEqual(data.color, parseInt(Colors.AI_DJ.replace('#', ''), 16));
     });

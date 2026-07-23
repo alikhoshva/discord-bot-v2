@@ -26,7 +26,7 @@ async function execute(interaction, client) {
     type: 'danger',
   });
 
-  return sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
+  return sendTemporaryReply(interaction, { embeds: [embed] }, 10000);
 }
 
 export default {
