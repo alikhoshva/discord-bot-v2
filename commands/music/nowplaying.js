@@ -19,7 +19,7 @@ export default {
 
     await cleanupLastNowPlaying(player);
 
-    const embed = buildNowPlayingEmbed(player, player.current);
+    const embed = buildNowPlayingEmbed(player, player.current, { showProgress: true });
     const row = buildPlayerControls(player);
     const replyMsg = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
     player.lastNowPlayingMessage = replyMsg;

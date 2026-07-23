@@ -6,9 +6,12 @@ import { Colors, formatDuration, createProgressBar } from './theme.js';
  * Build Now Playing rich embed card.
  * @param {object} player Moonlink player object
  * @param {object} track Current track object
+ * @param {object} [options={}] Additional formatting options
+ * @param {boolean} [options.showProgress=false] Whether to show the dynamic progress bar instead of total duration
  * @returns {EmbedBuilder}
  */
-export function buildNowPlayingEmbed(player, track) {
+export function buildNowPlayingEmbed(player, track, options = {}) {
+  const { showProgress = false } = options;
   const artwork = track.artworkUrl || track.thumbnail || null;
   const requester = track.requester ? `<@${track.requester}>` : 'Unknown';
   const author = track.author || track.artist || 'Unknown Artist';
@@ -27,15 +30,22 @@ export function buildNowPlayingEmbed(player, track) {
 
   const loopBadge = isLooping ? ' • 🔁 Loop Mode: ON' : '';
 
+  const fields = [
+    { name: 'Artist / Channel', value: author, inline: true },
+    { name: 'Requested By', value: requester, inline: true },
+  ];
+
+  if (showProgress) {
+    fields.push({ name: 'Progress', value: createProgressBar(currentPos, totalDuration), inline: false });
+  } else {
+    fields.push({ name: 'Duration', value: formatDuration(totalDuration), inline: true });
+  }
+
   const embed = new EmbedBuilder()
     .setTitle(title)
     .setDescription(`**[${track.title}](${track.uri})**`)
     .setColor(color)
-    .addFields(
-      { name: 'Artist / Channel', value: author, inline: true },
-      { name: 'Requested By', value: requester, inline: true },
-      { name: 'Progress', value: createProgressBar(currentPos, totalDuration), inline: false },
-    );
+    .addFields(fields);
 
   if (artwork) {
     embed.setThumbnail(artwork);
