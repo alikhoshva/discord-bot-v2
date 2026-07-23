@@ -68,12 +68,6 @@ export function buildQueueControls(currentPage = 1, totalPages = 1) {
     .setStyle(ButtonStyle.Secondary)
     .setDisabled(currentPage <= 1);
 
-  const pageIndicator = new ButtonBuilder()
-    .setCustomId('music_queue_indicator')
-    .setLabel(`${currentPage} / ${totalPages}`)
-    .setStyle(ButtonStyle.Secondary)
-    .setDisabled(true);
-
   const nextButton = new ButtonBuilder()
     .setCustomId(`music_queue_next_${currentPage}`)
     .setLabel('Next')
@@ -86,7 +80,6 @@ export function buildQueueControls(currentPage = 1, totalPages = 1) {
     .setStyle(ButtonStyle.Primary);
 
   return new ActionRowBuilder().addComponents(
-    pageIndicator,
     prevButton,
     nextButton,
     refreshButton,

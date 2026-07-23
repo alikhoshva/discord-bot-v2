@@ -65,7 +65,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
   const totalTracks = player.queue.size;
   const totalPages = Math.ceil(totalTracks / itemsPerPage) || 1;
   const currentPage = Math.min(Math.max(page, 1), totalPages);
-  const isLooping = player.loop || player.repeat || false;
+  const isLooping = player?.loop === 'track' || player?.loop === 'queue' || player?.loop === true || player?.repeat === true;
 
   const embed = new EmbedBuilder()
     .setTitle('Current Music Queue')

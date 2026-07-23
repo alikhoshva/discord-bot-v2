@@ -59,30 +59,27 @@ describe('UI Component Builder Tests', () => {
   describe('buildQueueControls()', () => {
     it('should disable Previous button on page 1', () => {
       const actionRow = buildQueueControls(1, 3);
-      const [pageIndicator, prevBtn, nextBtn, refreshBtn] = actionRow.components;
+      const [prevBtn, nextBtn, refreshBtn] = actionRow.components;
 
       assert.strictEqual(prevBtn.data.disabled, true);
       assert.strictEqual(nextBtn.data.disabled, false);
-      assert.strictEqual(pageIndicator.data.label, '1 / 3');
       assert.strictEqual(refreshBtn.data.custom_id, 'music_queue_refresh');
     });
 
     it('should enable both Previous and Next buttons on middle page', () => {
       const actionRow = buildQueueControls(2, 3);
-      const [pageIndicator, prevBtn, nextBtn] = actionRow.components;
+      const [prevBtn, nextBtn] = actionRow.components;
 
       assert.strictEqual(prevBtn.data.disabled, false);
       assert.strictEqual(nextBtn.data.disabled, false);
-      assert.strictEqual(pageIndicator.data.label, '2 / 3');
     });
 
     it('should disable Next button on final page', () => {
       const actionRow = buildQueueControls(3, 3);
-      const [pageIndicator, prevBtn, nextBtn] = actionRow.components;
+      const [prevBtn, nextBtn] = actionRow.components;
 
       assert.strictEqual(prevBtn.data.disabled, false);
       assert.strictEqual(nextBtn.data.disabled, true);
-      assert.strictEqual(pageIndicator.data.label, '3 / 3');
     });
   });
 });
