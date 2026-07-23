@@ -5,3 +5,8 @@ Dockerfile
 compose.yml
 compose.prod.yaml
 .github
+.agents
+.moonlink
+tests
+coverage
+*.log
