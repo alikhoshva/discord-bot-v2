@@ -124,4 +124,8 @@ export async function startIdleTimer(player, client) {
       await cleanupLastNowPlaying(activePlayer);
     }
   }, 30000);
+
+  if (player.idleTimeout && typeof player.idleTimeout.unref === 'function') {
+    player.idleTimeout.unref();
+  }
 }

@@ -26,9 +26,13 @@ export async function sendTemporaryReply(interaction, payload, durationMs = 1000
     return null;
   }
 
-  setTimeout(() => {
+  const timer = setTimeout(() => {
     interaction.deleteReply().catch(() => {});
   }, durationMs);
+
+  if (timer && typeof timer.unref === 'function') {
+    timer.unref();
+  }
 
   return reply;
 }
