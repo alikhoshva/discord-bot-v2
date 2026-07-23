@@ -1,3 +1,4 @@
+import { MessageFlags } from 'discord.js';
 import { buildNowPlayingEmbed, buildQueueEmbed, buildHistoryEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls, buildQueueControls } from '../../utils/components.js';
 import { cleanupLastNowPlaying } from '../../services/playerManager.js';
@@ -87,14 +88,22 @@ export async function handlePlayerButtons(interaction, player) {
       const totalPages = Math.ceil(player.queue.size / itemsPerPage) || 1;
       const embed = buildQueueEmbed(player, 1, itemsPerPage);
       const row = buildQueueControls(1, totalPages);
-      await sendTemporaryReply(interaction, { embeds: [embed], components: [row] }, 60000);
+      await sendTemporaryReply(
+        interaction,
+        { embeds: [embed], components: [row], flags: MessageFlags.Ephemeral },
+        60000,
+      );
       break;
     }
 
     case 'music_history': {
       const itemsPerPage = 5;
       const embed = buildHistoryEmbed(player, 1, itemsPerPage);
-      await sendTemporaryReply(interaction, { embeds: [embed] }, 60000);
+      await sendTemporaryReply(
+        interaction,
+        { embeds: [embed], flags: MessageFlags.Ephemeral },
+        60000,
+      );
       break;
     }
 

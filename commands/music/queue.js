@@ -1,5 +1,4 @@
-// commands/music/queue.js
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { buildQueueEmbed } from '../../utils/embeds.js';
 import { buildQueueControls } from '../../utils/components.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
@@ -32,7 +31,11 @@ async function execute(interaction, client) {
   const embed = buildQueueEmbed(player, currentPage, itemsPerPage);
   const row = buildQueueControls(currentPage, totalPages);
 
-  return sendTemporaryReply(interaction, { embeds: [embed], components: [row] }, 60000);
+  return sendTemporaryReply(
+    interaction,
+    { embeds: [embed], components: [row], flags: MessageFlags.Ephemeral },
+    60000,
+  );
 }
 
 export default {

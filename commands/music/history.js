@@ -1,5 +1,4 @@
-// commands/music/history.js
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { buildHistoryEmbed } from '../../utils/embeds.js';
 import { validateVoicePermissions } from '../../utils/voiceGuard.js';
 import { sendTemporaryReply } from '../../services/messageService.js';
@@ -30,7 +29,11 @@ async function execute(interaction, client) {
 
   const embed = buildHistoryEmbed(player, currentPage, itemsPerPage);
 
-  return sendTemporaryReply(interaction, { embeds: [embed] }, 60000);
+  return sendTemporaryReply(
+    interaction,
+    { embeds: [embed], flags: MessageFlags.Ephemeral },
+    60000,
+  );
 }
 
 export default {
