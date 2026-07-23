@@ -6,19 +6,14 @@ import { Colors, formatDuration, createProgressBar } from './theme.js';
  * Build Now Playing rich embed card.
  * @param {object} player Moonlink player object
  * @param {object} track Current track object
- * @param {object} [options={}] Additional formatting options
- * @param {boolean} [options.showProgress=false] Whether to show the dynamic progress bar instead of total duration
  * @returns {EmbedBuilder}
  */
-export function buildNowPlayingEmbed(player, track, options = {}) {
-  const { showProgress = false } = options;
+export function buildNowPlayingEmbed(player, track) {
   const artwork = track.artworkUrl || track.thumbnail || null;
   const requester = track.requester ? `<@${track.requester}>` : 'Unknown';
   const author = track.author || track.artist || 'Unknown Artist';
-  const currentPos = player.current?.position ?? track?.position ?? 0;
   const totalDuration = track.duration || 0;
   const isPaused = player.paused || false;
-  const isLooping = player.loop || player.repeat || false;
 
   let title = '🎵 Now Playing';
   let color = Colors.BRAND;
@@ -28,18 +23,11 @@ export function buildNowPlayingEmbed(player, track, options = {}) {
     color = Colors.WARNING;
   }
 
-  const loopBadge = isLooping ? ' • 🔁 Loop Mode: ON' : '';
-
   const fields = [
     { name: 'Artist / Channel', value: author, inline: true },
+    { name: 'Duration', value: formatDuration(totalDuration), inline: true },
     { name: 'Requested By', value: requester, inline: true },
   ];
-
-  if (showProgress) {
-    fields.push({ name: 'Progress', value: createProgressBar(currentPos, totalDuration), inline: false });
-  } else {
-    fields.push({ name: 'Duration', value: formatDuration(totalDuration), inline: true });
-  }
 
   const embed = new EmbedBuilder()
     .setTitle(title)
@@ -55,11 +43,11 @@ export function buildNowPlayingEmbed(player, track, options = {}) {
     const nextTrack = player.queue.tracks[0];
     const nextTitle = nextTrack.title.length > 40 ? `${nextTrack.title.slice(0, 37)}...` : nextTrack.title;
     embed.setFooter({
-      text: `Next Up: ${nextTitle} • ${player.queue.size} track(s) remaining${loopBadge}`,
+      text: `Next Up: ${nextTitle} • ${player.queue.size} track(s) remaining`,
     });
   } else {
     embed.setFooter({
-      text: `Queue Empty • Add tracks with /play${loopBadge}`,
+      text: 'Queue Empty • Add tracks with /play',
     });
   }
 

@@ -7,7 +7,7 @@ import { cleanupLastNowPlaying } from '../../services/playerManager.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('nowplaying')
-    .setDescription('Displays the currently playing song with visual progress'),
+    .setDescription('Displays the currently playing song details'),
   async execute(interaction, client) {
     const player = client.manager?.players?.get(interaction.guild.id);
     if (!player || !player.current) {
@@ -19,7 +19,7 @@ export default {
 
     await cleanupLastNowPlaying(player);
 
-    const embed = buildNowPlayingEmbed(player, player.current, { showProgress: true });
+    const embed = buildNowPlayingEmbed(player, player.current);
     const row = buildPlayerControls(player);
     const replyMsg = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
     player.lastNowPlayingMessage = replyMsg;

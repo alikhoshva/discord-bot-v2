@@ -14,7 +14,7 @@ import { createMockPlayer, createMockTrack } from '../mocks/mockMoonlink.js';
 
 describe('Embed Builder Utility Tests', () => {
   describe('buildNowPlayingEmbed()', () => {
-    it('should build Now Playing embed with Duration field by default', () => {
+    it('should build Now Playing embed with 3-column fields by default', () => {
       const track = createMockTrack({ title: 'Synthwave Dreams', author: 'Artist A' });
       const player = createMockPlayer({ current: track });
 
@@ -25,18 +25,10 @@ describe('Embed Builder Utility Tests', () => {
       assert.ok(data.description.includes('Synthwave Dreams'));
       assert.strictEqual(data.color, parseInt(Colors.BRAND.replace('#', ''), 16));
       assert.strictEqual(data.fields.length, 3);
+      assert.strictEqual(data.fields[0].name, 'Artist / Channel');
       assert.strictEqual(data.fields[0].value, 'Artist A');
-      assert.strictEqual(data.fields[2].name, 'Duration');
-    });
-
-    it('should show Progress bar when showProgress option is true', () => {
-      const track = createMockTrack({ title: 'Synthwave Dreams' });
-      const player = createMockPlayer({ current: track });
-
-      const embed = buildNowPlayingEmbed(player, track, { showProgress: true });
-      const data = embed.toJSON();
-
-      assert.strictEqual(data.fields[2].name, 'Progress');
+      assert.strictEqual(data.fields[1].name, 'Duration');
+      assert.strictEqual(data.fields[2].name, 'Requested By');
     });
 
     it('should change title and color when player is paused', () => {
