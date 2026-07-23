@@ -1,5 +1,4 @@
-// interactions/buttons/playerButtons.js
-import { buildNowPlayingEmbed, buildQueueEmbed } from '../../utils/embeds.js';
+import { buildNowPlayingEmbed, buildQueueEmbed, buildHistoryEmbed } from '../../utils/embeds.js';
 import { buildPlayerControls, buildQueueControls } from '../../utils/components.js';
 import { cleanupLastNowPlaying } from '../../services/playerManager.js';
 import { sendTemporaryReply } from '../../services/messageService.js';
@@ -47,11 +46,12 @@ export async function handlePlayerButtons(interaction, player) {
 
       const updatedRow = buildPlayerControls(player);
       const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
+      const components = Array.isArray(updatedRow) ? updatedRow : [updatedRow];
 
       if (interaction.message?.editable && updatedEmbed) {
-        await interaction.update({ embeds: [updatedEmbed], components: [updatedRow] });
+        await interaction.update({ embeds: [updatedEmbed], components });
       } else if (interaction.message?.editable) {
-        await interaction.update({ components: [updatedRow] });
+        await interaction.update({ components });
       } else {
         await sendTemporaryReply(
           interaction,
@@ -91,6 +91,13 @@ export async function handlePlayerButtons(interaction, player) {
       break;
     }
 
+    case 'music_history': {
+      const itemsPerPage = 5;
+      const embed = buildHistoryEmbed(player, 1, itemsPerPage);
+      await sendTemporaryReply(interaction, { embeds: [embed] }, 60000);
+      break;
+    }
+
     case 'music_loop': {
       const isCurrentlyLooping =
         player.loop === 'track' || player.loop === 'queue' || player.loop === true || player.repeat === true;
@@ -104,11 +111,12 @@ export async function handlePlayerButtons(interaction, player) {
 
       const updatedRow = buildPlayerControls(player);
       const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
+      const components = Array.isArray(updatedRow) ? updatedRow : [updatedRow];
 
       if (interaction.message?.editable && updatedEmbed) {
-        await interaction.update({ embeds: [updatedEmbed], components: [updatedRow] });
+        await interaction.update({ embeds: [updatedEmbed], components });
       } else if (interaction.message?.editable) {
-        await interaction.update({ components: [updatedRow] });
+        await interaction.update({ components });
       } else {
         await sendTemporaryReply(
           interaction,

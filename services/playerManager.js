@@ -74,12 +74,30 @@ export function initPlayerManager(client) {
 
   // Track playback events
   manager.on('trackStart', async (player, track) => {
+    if (!player.queueHistory) {
+      player.queueHistory = [];
+    }
+    player.queueHistory.unshift({
+      title: track.title,
+      author: track.author || track.artist || 'Unknown Artist',
+      uri: track.uri,
+      duration: track.duration || 0,
+      requester: track.requester || null,
+      playedAt: Date.now(),
+    });
+    if (player.queueHistory.length > 100) {
+      player.queueHistory.pop();
+    }
+
     const channel = await getTextChannel(client, player.textChannelId);
     if (channel) {
       await cleanupLastNowPlaying(player);
       const embed = buildNowPlayingEmbed(player, track);
-      const row = buildPlayerControls(player);
-      player.lastNowPlayingMessage = await channel.send({ embeds: [embed], components: [row] });
+      const rows = buildPlayerControls(player);
+      player.lastNowPlayingMessage = await channel.send({
+        embeds: [embed],
+        components: Array.isArray(rows) ? rows : [rows],
+      });
     }
     if (player.idleTimeout) {
       clearTimeout(player.idleTimeout);

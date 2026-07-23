@@ -221,3 +221,52 @@ export function buildStatusEmbed({ title, description, type = 'info', footer }) 
 
   return embed;
 }
+
+/**
+ * Build History rich embed card displaying played tracks for current session.
+ * @param {object} player Moonlink player object
+ * @param {number} page Page number
+ * @param {number} itemsPerPage Items per page
+ * @returns {EmbedBuilder}
+ */
+export function buildHistoryEmbed(player, page = 1, itemsPerPage = 5) {
+  const history = player?.queueHistory || [];
+  const totalTracks = history.length;
+  const totalPages = Math.ceil(totalTracks / itemsPerPage) || 1;
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+
+  const embed = new EmbedBuilder()
+    .setTitle('📜 Session Track History')
+    .setColor(Colors.BRAND);
+
+  if (totalTracks === 0) {
+    embed.setDescription('*No tracks have been played in this session yet.*');
+    return embed;
+  }
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pageTracks = history.slice(startIndex, startIndex + itemsPerPage);
+
+  const tracksList = pageTracks.map((track, index) => {
+    const globalIndex = startIndex + index + 1;
+    const requester = track.requester ? ` • <@${track.requester}>` : '';
+    const title = track.title.length > 45 ? `${track.title.slice(0, 42)}...` : track.title;
+    return `**${globalIndex}.** [${title}](${track.uri}) \`[${formatDuration(track.duration)}]\`${requester}`;
+  });
+
+  let fieldValue = tracksList.join('\n');
+  if (fieldValue.length > 1024) {
+    fieldValue = fieldValue.substring(0, 1020) + '...';
+  }
+
+  embed.addFields({
+    name: `Played Recently (Page ${currentPage}/${totalPages}):`,
+    value: fieldValue,
+  });
+
+  embed.setFooter({
+    text: `Page ${currentPage}/${totalPages} • ${totalTracks} track(s) in session history`,
+  });
+
+  return embed;
+}

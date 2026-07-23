@@ -212,7 +212,36 @@ describe('Slash Command Integration Tests', () => {
       assert.strictEqual(interaction.replied, true);
       const reply = interaction._replies[0];
       assert.ok(reply.embeds && reply.embeds.length === 1);
-      assert.ok(reply.components && reply.components.length === 1);
+      assert.ok(reply.components && reply.components.length === 2);
+    });
+  });
+
+  describe('/history', () => {
+    it('should display history embed for session tracks', async () => {
+      const historyCommand = (await import('../../commands/music/history.js')).default;
+      const voiceChannel = createMockVoiceChannel({ id: 'vc_shared' });
+      const interaction = createMockInteraction({
+        commandName: 'history',
+        memberOptions: { voiceChannel },
+      });
+
+      const player = createMockPlayer({
+        guildId: interaction.guild.id,
+        voiceChannelId: voiceChannel.id,
+      });
+      player.queueHistory = [
+        { title: 'Played Track 1', uri: 'https://youtube.com/watch?v=1', duration: 180000, requester: 'user1' }
+      ];
+
+      const manager = createMockMoonlinkManager({ initialPlayer: player });
+      const client = createMockClient({ manager });
+
+      await historyCommand.execute(interaction, client);
+
+      assert.strictEqual(interaction.replied, true);
+      const reply = interaction._replies[0];
+      assert.ok(reply.embeds && reply.embeds.length === 1);
+      assert.strictEqual(reply.embeds[0].data.title, '📜 Session Track History');
     });
   });
 });

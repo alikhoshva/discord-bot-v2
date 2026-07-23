@@ -22,8 +22,8 @@ export default {
     await cleanupLastNowPlaying(player);
 
     const embed = buildNowPlayingEmbed(player, player.current);
-    const row = buildPlayerControls(player);
-    await interaction.reply({ embeds: [embed], components: [row] });
+    const rows = buildPlayerControls(player);
+    await interaction.reply({ embeds: [embed], components: Array.isArray(rows) ? rows : [rows] });
     const replyMsg = await interaction.fetchReply();
     player.lastNowPlayingMessage = replyMsg;
   },

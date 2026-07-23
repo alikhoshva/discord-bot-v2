@@ -8,11 +8,40 @@ import {
   buildPlaylistAddedEmbed,
   buildAIDJEmbed,
   buildStatusEmbed,
+  buildHistoryEmbed,
 } from '../../utils/embeds.js';
 import { Colors } from '../../utils/theme.js';
 import { createMockPlayer, createMockTrack } from '../mocks/mockMoonlink.js';
 
 describe('Embed Builder Utility Tests', () => {
+  describe('buildHistoryEmbed()', () => {
+    it('should show empty message when session history has no tracks', () => {
+      const player = createMockPlayer();
+      player.queueHistory = [];
+
+      const embed = buildHistoryEmbed(player, 1, 5);
+      const data = embed.toJSON();
+
+      assert.strictEqual(data.title, '📜 Session Track History');
+      assert.ok(data.description.includes('No tracks have been played in this session yet'));
+    });
+
+    it('should list played tracks when queueHistory contains tracks', () => {
+      const player = createMockPlayer();
+      player.queueHistory = [
+        { title: 'Track 1', uri: 'https://youtube.com/watch?v=1', duration: 180000, requester: 'user1' },
+        { title: 'Track 2', uri: 'https://youtube.com/watch?v=2', duration: 200000, requester: 'user2' },
+      ];
+
+      const embed = buildHistoryEmbed(player, 1, 5);
+      const data = embed.toJSON();
+
+      assert.strictEqual(data.title, '📜 Session Track History');
+      assert.ok(data.fields.some((f) => f.name.includes('Played Recently')));
+      assert.ok(data.fields[0].value.includes('Track 1'));
+      assert.ok(data.fields[0].value.includes('Track 2'));
+    });
+  });
   describe('buildNowPlayingEmbed()', () => {
     it('should build Now Playing embed with 3-column fields by default', () => {
       const track = createMockTrack({ title: 'Synthwave Dreams', author: 'Artist A' });

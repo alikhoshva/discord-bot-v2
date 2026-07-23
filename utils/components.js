@@ -4,7 +4,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 /**
  * Build interactive control buttons for the music player.
  * @param {object} player Moonlink player instance
- * @returns {ActionRowBuilder} Discord action row containing player control buttons
+ * @returns {ActionRowBuilder[]} Array of Discord action rows containing player control buttons
  */
 export function buildPlayerControls(player) {
   const isPaused = player?.paused || false;
@@ -25,23 +25,34 @@ export function buildPlayerControls(player) {
     .setLabel('Stop')
     .setStyle(ButtonStyle.Danger);
 
-  const queueButton = new ButtonBuilder()
-    .setCustomId('music_queue')
-    .setLabel('Queue')
-    .setStyle(ButtonStyle.Secondary);
-
   const loopButton = new ButtonBuilder()
     .setCustomId('music_loop')
     .setLabel(isLooping ? 'Loop: ON' : 'Loop: OFF')
     .setStyle(isLooping ? ButtonStyle.Success : ButtonStyle.Secondary);
 
-  return new ActionRowBuilder().addComponents(
+  const queueButton = new ButtonBuilder()
+    .setCustomId('music_queue')
+    .setLabel('Queue')
+    .setStyle(ButtonStyle.Secondary);
+
+  const historyButton = new ButtonBuilder()
+    .setCustomId('music_history')
+    .setLabel('History')
+    .setStyle(ButtonStyle.Secondary);
+
+  const row1 = new ActionRowBuilder().addComponents(
     pauseResumeButton,
     skipButton,
     stopButton,
-    queueButton,
     loopButton,
   );
+
+  const row2 = new ActionRowBuilder().addComponents(
+    queueButton,
+    historyButton,
+  );
+
+  return [row1, row2];
 }
 
 /**
@@ -75,8 +86,8 @@ export function buildQueueControls(currentPage = 1, totalPages = 1) {
     .setStyle(ButtonStyle.Primary);
 
   return new ActionRowBuilder().addComponents(
-    prevButton,
     pageIndicator,
+    prevButton,
     nextButton,
     refreshButton,
   );
