@@ -77,8 +77,12 @@ export function createMockPlayer(options = {}) {
       }
       return player;
     },
-    pause: async (state = true) => {
-      player.paused = state;
+    pause: async () => {
+      player.paused = true;
+      return player;
+    },
+    resume: async () => {
+      player.paused = false;
       return player;
     },
     setPaused: async (state = true) => {

@@ -16,7 +16,7 @@ async function execute(interaction, client) {
 
   // Step 3: Send embed response
   const embed = new EmbedBuilder()
-    .setTitle('🏓 Pong!')
+    .setTitle('Pong!')
     .addFields(
       { name: 'API Latency', value: `\`${roundtrip}ms\``, inline: true },
       { name: 'WebSocket Ping', value: `\`${wsPing >= 0 ? wsPing : 'N/A'}ms\``, inline: true },

@@ -13,19 +13,16 @@ export function buildPlayerControls(player) {
   const pauseResumeButton = new ButtonBuilder()
     .setCustomId('music_pause_resume')
     .setLabel(isPaused ? 'Resume' : 'Pause')
-    .setEmoji(isPaused ? '▶️' : '⏸️')
     .setStyle(isPaused ? ButtonStyle.Success : ButtonStyle.Primary);
 
   const skipButton = new ButtonBuilder()
     .setCustomId('music_skip')
     .setLabel('Skip')
-    .setEmoji('⏭️')
     .setStyle(ButtonStyle.Secondary);
 
   const stopButton = new ButtonBuilder()
     .setCustomId('music_stop')
     .setLabel('Stop')
-    .setEmoji('⏹️')
     .setStyle(ButtonStyle.Danger);
 
   const queueButton = new ButtonBuilder()
@@ -36,7 +33,6 @@ export function buildPlayerControls(player) {
   const loopButton = new ButtonBuilder()
     .setCustomId('music_loop')
     .setLabel(isLooping ? 'Loop: ON' : 'Loop: OFF')
-    .setEmoji('🔁')
     .setStyle(isLooping ? ButtonStyle.Success : ButtonStyle.Secondary);
 
   return new ActionRowBuilder().addComponents(
@@ -58,7 +54,6 @@ export function buildQueueControls(currentPage = 1, totalPages = 1) {
   const prevButton = new ButtonBuilder()
     .setCustomId(`music_queue_prev_${currentPage}`)
     .setLabel('Previous')
-    .setEmoji('◀️')
     .setStyle(ButtonStyle.Secondary)
     .setDisabled(currentPage <= 1);
 
@@ -71,14 +66,12 @@ export function buildQueueControls(currentPage = 1, totalPages = 1) {
   const nextButton = new ButtonBuilder()
     .setCustomId(`music_queue_next_${currentPage}`)
     .setLabel('Next')
-    .setEmoji('▶️')
     .setStyle(ButtonStyle.Secondary)
     .setDisabled(currentPage >= totalPages);
 
   const refreshButton = new ButtonBuilder()
     .setCustomId('music_queue_refresh')
     .setLabel('Refresh')
-    .setEmoji('🔄')
     .setStyle(ButtonStyle.Primary);
 
   return new ActionRowBuilder().addComponents(

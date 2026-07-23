@@ -79,6 +79,33 @@ describe('Interaction Event Router Integration Tests', () => {
     assert.strictEqual(interaction._updates.length, 1);
   });
 
+  it('should resume playback when pause/resume button is pressed on paused player', async () => {
+    const voiceChannel = createMockVoiceChannel({ id: 'vc_shared' });
+    const player = createMockPlayer({
+      guildId: '123456789012345678',
+      voiceChannelId: voiceChannel.id,
+      paused: true,
+      current: createMockTrack(),
+    });
+
+    const manager = createMockMoonlinkManager({ initialPlayer: player });
+    const client = createMockClient({ manager });
+
+    const interaction = createMockInteraction({
+      type: 'button',
+      customId: 'music_pause_resume',
+      memberOptions: { voiceChannel },
+      guild: { id: player.guildId },
+    });
+
+    interaction.message = { editable: true };
+
+    await interactionCreateEvent.execute(interaction, client);
+
+    assert.strictEqual(player.paused, false);
+    assert.strictEqual(interaction._updates.length, 1);
+  });
+
   it('should reject button interaction if user is in different voice channel', async () => {
     const userVoiceChannel = createMockVoiceChannel({ id: 'user_vc_differing' });
     const player = createMockPlayer({

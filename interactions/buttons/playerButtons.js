@@ -39,7 +39,11 @@ export async function handlePlayerButtons(interaction, player) {
   switch (customId) {
     case 'music_pause_resume': {
       const isPaused = player.paused;
-      await player.pause(!isPaused);
+      if (isPaused) {
+        await player.resume();
+      } else {
+        await player.pause();
+      }
 
       const updatedRow = buildPlayerControls(player);
       const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
@@ -50,7 +54,7 @@ export async function handlePlayerButtons(interaction, player) {
         await interaction.update({ components: [updatedRow] });
       } else {
         await interaction.reply({
-          content: isPaused ? '▶️ Resumed playback.' : '⏸️ Paused playback.',
+          content: isPaused ? 'Resumed playback.' : 'Paused playback.',
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -109,7 +113,7 @@ export async function handlePlayerButtons(interaction, player) {
         await interaction.update({ components: [updatedRow] });
       } else {
         await interaction.reply({
-          content: newLoopState ? '🔁 Loop mode **enabled**.' : '➡️ Loop mode **disabled**.',
+          content: newLoopState ? 'Loop mode **enabled**.' : 'Loop mode **disabled**.',
           flags: MessageFlags.Ephemeral,
         });
       }
