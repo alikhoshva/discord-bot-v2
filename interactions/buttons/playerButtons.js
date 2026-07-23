@@ -92,9 +92,15 @@ export async function handlePlayerButtons(interaction, player) {
     }
 
     case 'music_loop': {
-      const currentLoop = player.loop || player.repeat || false;
-      const newLoopState = !currentLoop;
-      player.loop = newLoopState;
+      const isCurrentlyLooping =
+        player.loop === 'track' || player.loop === 'queue' || player.loop === true || player.repeat === true;
+      const targetMode = isCurrentlyLooping ? 'off' : 'track';
+
+      if (typeof player.setLoop === 'function') {
+        player.setLoop(targetMode);
+      } else {
+        player.loop = targetMode;
+      }
 
       const updatedRow = buildPlayerControls(player);
       const updatedEmbed = player.current ? buildNowPlayingEmbed(player, player.current) : null;
@@ -106,7 +112,7 @@ export async function handlePlayerButtons(interaction, player) {
       } else {
         await sendTemporaryReply(
           interaction,
-          newLoopState ? 'Loop mode **enabled**.' : 'Loop mode **disabled**.',
+          targetMode !== 'off' ? 'Loop mode **enabled**.' : 'Loop mode **disabled**.',
           10000,
         );
       }

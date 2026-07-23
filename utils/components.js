@@ -8,7 +8,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
  */
 export function buildPlayerControls(player) {
   const isPaused = player?.paused || false;
-  const isLooping = player?.loop || player?.repeat || false;
+  const isLooping = player?.loop === 'track' || player?.loop === 'queue' || player?.loop === true || player?.repeat === true;
 
   const pauseResumeButton = new ButtonBuilder()
     .setCustomId('music_pause_resume')

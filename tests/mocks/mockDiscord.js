@@ -96,6 +96,12 @@ export function createMockInteraction(options = {}) {
     deleteReply: async () => {
       interaction.deleted = true;
     },
+    fetchReply: async () => ({
+      id: 'msg_fetched',
+      delete: async () => {
+        interaction.deleted = true;
+      },
+    }),
     _replies: replies,
     _followUps: followUps,
     _updates: updates,

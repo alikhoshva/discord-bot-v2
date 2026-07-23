@@ -8,7 +8,8 @@ const data = new SlashCommandBuilder()
 
 async function execute(interaction, client) {
   // Step 1: Defer reply and fetch response timestamp
-  const sent = await interaction.deferReply({ fetchReply: true });
+  await interaction.deferReply();
+  const sent = await interaction.fetchReply();
 
   // Step 2: Calculate latency
   const roundtrip = sent.createdTimestamp - interaction.createdTimestamp;

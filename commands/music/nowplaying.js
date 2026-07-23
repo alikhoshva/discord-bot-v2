@@ -23,7 +23,8 @@ export default {
 
     const embed = buildNowPlayingEmbed(player, player.current);
     const row = buildPlayerControls(player);
-    const replyMsg = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+    await interaction.reply({ embeds: [embed], components: [row] });
+    const replyMsg = await interaction.fetchReply();
     player.lastNowPlayingMessage = replyMsg;
   },
 };

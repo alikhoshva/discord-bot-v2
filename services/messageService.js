@@ -18,7 +18,8 @@ export async function sendTemporaryReply(interaction, payload, durationMs = 1000
     if (interaction.replied || interaction.deferred) {
       reply = await interaction.editReply(messageOptions);
     } else {
-      reply = await interaction.reply({ ...messageOptions, fetchReply: true });
+      await interaction.reply(messageOptions);
+      reply = await interaction.fetchReply();
     }
   } catch (error) {
     logger.error('Error sending temporary reply:', error);

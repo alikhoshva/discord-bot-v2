@@ -61,6 +61,11 @@ export function createMockPlayer(options = {}) {
     queue: queue,
     lastNowPlayingMessageId: options.lastNowPlayingMessageId || null,
 
+    setLoop: (mode) => {
+      player.loop = mode;
+      return player;
+    },
+
     connect: async () => {
       player.connected = true;
       return player;
