@@ -15,11 +15,11 @@ export function buildNowPlayingEmbed(player, track) {
   const totalDuration = track.duration || 0;
   const isPaused = player.paused || false;
 
-  let title = '🎵 Now Playing';
+  let title = 'Now Playing';
   let color = Colors.BRAND;
 
   if (isPaused) {
-    title = '⏸️ Playback Paused';
+    title = 'Playback Paused';
     color = Colors.WARNING;
   }
 
@@ -68,7 +68,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
   const isLooping = player.loop || player.repeat || false;
 
   const embed = new EmbedBuilder()
-    .setTitle('📜 Current Music Queue')
+    .setTitle('Current Music Queue')
     .setColor(Colors.BRAND);
 
   if (player.current) {
@@ -106,7 +106,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
     });
 
     const totalDurationMs = (player.current?.duration || 0) + player.queue.duration;
-    const loopStatus = isLooping ? ' • 🔁 Loop: ON' : '';
+    const loopStatus = isLooping ? ' • Loop: ON' : '';
     embed.setFooter({
       text: `Page ${currentPage}/${totalPages} • ${totalTracks} track(s) in queue • Total: ${formatDuration(totalDurationMs)}${loopStatus}`,
     });
@@ -130,7 +130,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
  */
 export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
   const embed = new EmbedBuilder()
-    .setTitle(isNowPlaying ? '🎵 Track Starting' : '➕ Added to Queue')
+    .setTitle(isNowPlaying ? 'Track Starting' : 'Added to Queue')
     .setDescription(`**[${track.title}](${track.uri})**`)
     .setColor(Colors.SUCCESS)
     .addFields(
@@ -160,7 +160,7 @@ export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
  */
 export function buildPlaylistAddedEmbed(playlistInfo, tracks, query, userId) {
   const embed = new EmbedBuilder()
-    .setTitle('🎶 Playlist Added to Queue')
+    .setTitle('Playlist Added to Queue')
     .setDescription(`**[${playlistInfo?.name || 'Playlist'}](${query})**`)
     .setColor(Colors.SUCCESS)
     .addFields(
@@ -199,7 +199,7 @@ export function buildAIDJEmbed(prompt, tracks, userId) {
   }
 
   return new EmbedBuilder()
-    .setTitle('🎧 AI DJ Playlist Generated')
+    .setTitle('AI DJ Playlist Generated')
     .setDescription(`**Vibe:** "${prompt}"\nAdded **${tracks.length}** tracks to the queue.`)
     .addFields(
       { name: 'Tracks Preview', value: previewValue },
@@ -219,8 +219,10 @@ export function buildStatusEmbed({ title, description, type = 'info', footer }) 
   if (type === 'warning') color = Colors.WARNING;
   if (type === 'danger') color = Colors.DANGER;
 
+  const cleanTitle = typeof title === 'string' ? title.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{24C2}-\u{1F251}]\s*/u, '') : title;
+
   const embed = new EmbedBuilder()
-    .setTitle(title)
+    .setTitle(cleanTitle)
     .setColor(color);
 
   if (description) embed.setDescription(description);

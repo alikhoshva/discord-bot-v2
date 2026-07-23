@@ -73,12 +73,10 @@ export async function handlePlayerButtons(interaction, player) {
       const skippedTitle = player.current?.title || 'Track';
       await player.skip();
 
-      const embed = buildStatusEmbed({
-        title: '⏭️ Skipped Track',
-        description: `Skipped: **${skippedTitle}**`,
-        type: 'info',
+      await interaction.reply({
+        content: `Skipped **${skippedTitle}**.`,
+        flags: MessageFlags.Ephemeral,
       });
-      await sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
       break;
     }
 
@@ -91,12 +89,10 @@ export async function handlePlayerButtons(interaction, player) {
         await player.stop();
       }
 
-      const embed = buildStatusEmbed({
-        title: '⏹️ Playback Stopped',
-        description: 'Cleared queue and disconnected from channel.',
-        type: 'danger',
+      await interaction.reply({
+        content: 'Playback stopped and queue cleared.',
+        flags: MessageFlags.Ephemeral,
       });
-      await sendTemporaryReply(interaction, { embeds: [embed] }, 5000);
       break;
     }
 

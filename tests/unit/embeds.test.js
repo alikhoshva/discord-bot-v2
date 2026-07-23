@@ -21,7 +21,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildNowPlayingEmbed(player, track);
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '🎵 Now Playing');
+      assert.strictEqual(data.title, 'Now Playing');
       assert.ok(data.description.includes('Synthwave Dreams'));
       assert.strictEqual(data.color, parseInt(Colors.BRAND.replace('#', ''), 16));
       assert.strictEqual(data.fields.length, 3);
@@ -38,7 +38,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildNowPlayingEmbed(player, track);
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '⏸️ Playback Paused');
+      assert.strictEqual(data.title, 'Playback Paused');
       assert.strictEqual(data.color, parseInt(Colors.WARNING.replace('#', ''), 16));
     });
   });
@@ -54,7 +54,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildQueueEmbed(player, 1, 5);
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '📜 Current Music Queue');
+      assert.strictEqual(data.title, 'Current Music Queue');
       assert.ok(data.fields.some((f) => f.name.includes('Up Next')));
     });
 
@@ -74,7 +74,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildTrackAddedEmbed(track, 2, false, 'user_123');
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '➕ Added to Queue');
+      assert.strictEqual(data.title, 'Added to Queue');
       assert.strictEqual(data.color, parseInt(Colors.SUCCESS.replace('#', ''), 16));
       assert.ok(data.fields.some((f) => f.name === 'Position in Queue' && f.value === '#2'));
     });
@@ -84,7 +84,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildTrackAddedEmbed(track, 1, true, 'user_123');
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '🎵 Track Starting');
+      assert.strictEqual(data.title, 'Track Starting');
       assert.ok(!data.fields.some((f) => f.name === 'Position in Queue'));
     });
   });
@@ -95,7 +95,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildPlaylistAddedEmbed({ name: 'My Chill Mix' }, tracks, 'https://youtube.com/playlist', 'user_123');
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '🎶 Playlist Added to Queue');
+      assert.strictEqual(data.title, 'Playlist Added to Queue');
       assert.ok(data.description.includes('My Chill Mix'));
       assert.ok(data.fields.some((f) => f.name === 'Tracks Added' && f.value === '2'));
     });
@@ -107,7 +107,7 @@ describe('Embed Builder Utility Tests', () => {
       const embed = buildAIDJEmbed('80s synth wave', tracks, 'user_123');
       const data = embed.toJSON();
 
-      assert.strictEqual(data.title, '🎧 AI DJ Playlist Generated');
+      assert.strictEqual(data.title, 'AI DJ Playlist Generated');
       assert.ok(data.description.includes('80s synth wave'));
       assert.strictEqual(data.color, parseInt(Colors.AI_DJ.replace('#', ''), 16));
     });

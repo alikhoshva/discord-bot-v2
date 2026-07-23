@@ -65,7 +65,7 @@ async function execute(interaction, client) {
       );
 
       if (isNowPlaying) {
-        await sendTemporaryReply(interaction, { embeds: [playlistEmbed] }, 5000);
+        await interaction.deleteReply().catch(() => {});
       } else {
         await interaction.editReply({ embeds: [playlistEmbed] });
       }
@@ -91,7 +91,7 @@ async function execute(interaction, client) {
       );
 
       if (isNowPlaying) {
-        await sendTemporaryReply(interaction, { embeds: [trackEmbed] }, 5000);
+        await interaction.deleteReply().catch(() => {});
       } else {
         await interaction.editReply({ embeds: [trackEmbed] });
       }

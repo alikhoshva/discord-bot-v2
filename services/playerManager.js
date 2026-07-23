@@ -114,15 +114,7 @@ export function initPlayerManager(client) {
 export async function startIdleTimer(player, client) {
   if (player.idleTimeout) return;
 
-  const channel = await getTextChannel(client, player.textChannelId);
-  if (channel) {
-    const warningEmbed = buildStatusEmbed({
-      title: '⏸️ Playback Idle',
-      description: 'Playback stopped. Disconnecting in 30 seconds if no new tracks are added.',
-      type: 'warning',
-    });
-    await sendTemporaryMessage(channel, { embeds: [warningEmbed] }, 5000);
-  }
+  await cleanupLastNowPlaying(player);
 
   player.idleTimeout = setTimeout(async () => {
     const activePlayer = client.manager?.players?.get(player.guildId);
@@ -130,15 +122,7 @@ export async function startIdleTimer(player, client) {
 
     if (!activePlayer.playing && activePlayer.queue.size === 0) {
       await activePlayer.destroy();
-      const textChannel = await getTextChannel(client, activePlayer.textChannelId);
-      if (textChannel) {
-        const disconnectEmbed = buildStatusEmbed({
-          title: '🔌 Disconnected',
-          description: 'Disconnected from voice channel due to inactivity.',
-          type: 'danger',
-        });
-        await sendTemporaryMessage(textChannel, { embeds: [disconnectEmbed] }, 5000);
-      }
+      await cleanupLastNowPlaying(activePlayer);
     }
   }, 30000);
 }
