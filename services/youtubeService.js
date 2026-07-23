@@ -1,16 +1,25 @@
 // services/youtubeService.js
 import config from '../config.js';
+import logger from '../utils/logger.js';
 
 const MIN_QUERY_LENGTH = 3;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+const suggestionCache = new Map();
 
 /**
- * Fetch video title suggestions from YouTube Data API v3.
+ * Fetch video title suggestions from YouTube Data API v3 with in-memory TTL caching.
  * @param {string} query Search query string
  * @returns {Promise<Array<{name: string, value: string}>>} Array of autocomplete choices
  */
 export async function getYoutubeSuggestions(query) {
   if (!query || query.length < MIN_QUERY_LENGTH) {
     return [];
+  }
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const cached = suggestionCache.get(normalizedQuery);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
   }
 
   try {
@@ -24,7 +33,7 @@ export async function getYoutubeSuggestions(query) {
     const res = await fetch(url.toString());
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`YouTube API returned status ${res.status}: ${errText}`);
+      logger.error(`YouTube API returned status ${res.status}: ${errText}`);
       return [];
     }
 
@@ -33,7 +42,7 @@ export async function getYoutubeSuggestions(query) {
       return [];
     }
 
-    return data.items.map((item) => {
+    const suggestions = data.items.map((item) => {
       const title = item.snippet.title;
       const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
 
@@ -42,8 +51,20 @@ export async function getYoutubeSuggestions(query) {
         value: videoUrl,
       };
     });
+
+    if (suggestionCache.size > 200) {
+      const now = Date.now();
+      for (const [key, value] of suggestionCache.entries()) {
+        if (now - value.timestamp > CACHE_TTL_MS) {
+          suggestionCache.delete(key);
+        }
+      }
+    }
+
+    suggestionCache.set(normalizedQuery, { timestamp: Date.now(), data: suggestions });
+    return suggestions;
   } catch (error) {
-    console.error('Error fetching YouTube suggestions:', error.message || error);
+    logger.error('Error fetching YouTube suggestions:', error.message || error);
     return [];
   }
 }

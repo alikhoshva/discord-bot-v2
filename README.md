@@ -70,6 +70,9 @@ A feature-rich, modular Discord music bot built with **Discord.js v14**, **Moonl
    LAVALINK_PASSWORD=youshallnotpass
    LAVALINK_SECURE=false
 
+   # Logging Level (debug | info | warn | error)
+   LOG_LEVEL=info
+
    # Spotify Credentials (Optional, configured in NodeLink)
    SPOTIFY_CLIENT_ID=your_spotify_client_id
    SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
@@ -135,9 +138,11 @@ discord-bot-v2/
 │   ├── buttons/         # Button click handlers (player controls, queue pagination)
 │   └── autocomplete/    # Slash command autocomplete handlers
 ├── events/              # Discord event routers (interactionCreate, ready, voiceStateUpdate)
-├── utils/               # Design system, guard functions, and UI helpers
+├── tests/               # Automated test suites (unit, integration, stress)
+├── utils/               # Design system, guard functions, logger, and UI helpers
 │   ├── voiceGuard.js    # Voice channel permission validation
 │   ├── playerHelpers.js # Text channel fetching & embed cleanup helpers
+│   ├── logger.js        # Formatted logger with ISO timestamps & levels
 │   ├── theme.js         # Color palette & formatting helpers
 │   ├── embeds.js        # Rich Discord Embed templates
 │   └── components.js    # Interactive button rows & player UI

@@ -31,7 +31,6 @@ export function buildPlayerControls(player) {
   const queueButton = new ButtonBuilder()
     .setCustomId('music_queue')
     .setLabel('Queue')
-    .setEmoji('📜')
     .setStyle(ButtonStyle.Secondary);
 
   const loopButton = new ButtonBuilder()

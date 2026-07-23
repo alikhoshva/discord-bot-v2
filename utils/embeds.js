@@ -12,30 +12,28 @@ export function buildNowPlayingEmbed(player, track) {
   const artwork = track.artworkUrl || track.thumbnail || null;
   const requester = track.requester ? `<@${track.requester}>` : 'Unknown';
   const author = track.author || track.artist || 'Unknown Artist';
-  const currentPos = player.current?.position ?? track?.position ?? 0;
   const totalDuration = track.duration || 0;
   const isPaused = player.paused || false;
-  const isLooping = player.loop || player.repeat || false;
 
-  let title = '🎵 Now Playing';
+  let title = 'Now Playing';
   let color = Colors.BRAND;
 
   if (isPaused) {
-    title = '⏸️ Playback Paused';
+    title = 'Playback Paused';
     color = Colors.WARNING;
   }
 
-  const loopBadge = isLooping ? ' • 🔁 Loop Mode: ON' : '';
+  const fields = [
+    { name: 'Artist / Channel', value: author, inline: true },
+    { name: 'Duration', value: formatDuration(totalDuration), inline: true },
+    { name: 'Requested By', value: requester, inline: true },
+  ];
 
   const embed = new EmbedBuilder()
     .setTitle(title)
     .setDescription(`**[${track.title}](${track.uri})**`)
     .setColor(color)
-    .addFields(
-      { name: 'Artist / Channel', value: author, inline: true },
-      { name: 'Requested By', value: requester, inline: true },
-      { name: 'Progress', value: createProgressBar(currentPos, totalDuration), inline: false },
-    );
+    .addFields(fields);
 
   if (artwork) {
     embed.setThumbnail(artwork);
@@ -45,11 +43,11 @@ export function buildNowPlayingEmbed(player, track) {
     const nextTrack = player.queue.tracks[0];
     const nextTitle = nextTrack.title.length > 40 ? `${nextTrack.title.slice(0, 37)}...` : nextTrack.title;
     embed.setFooter({
-      text: `Next Up: ${nextTitle} • ${player.queue.size} track(s) remaining${loopBadge}`,
+      text: `Next Up: ${nextTitle} • ${player.queue.size} track(s) remaining`,
     });
   } else {
     embed.setFooter({
-      text: `Queue Empty • Add tracks with /play${loopBadge}`,
+      text: 'Queue Empty • Add tracks with /play',
     });
   }
 
@@ -70,7 +68,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
   const isLooping = player.loop || player.repeat || false;
 
   const embed = new EmbedBuilder()
-    .setTitle('📜 Current Music Queue')
+    .setTitle('Current Music Queue')
     .setColor(Colors.BRAND);
 
   if (player.current) {
@@ -108,7 +106,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
     });
 
     const totalDurationMs = (player.current?.duration || 0) + player.queue.duration;
-    const loopStatus = isLooping ? ' • 🔁 Loop: ON' : '';
+    const loopStatus = isLooping ? ' • Loop: ON' : '';
     embed.setFooter({
       text: `Page ${currentPage}/${totalPages} • ${totalTracks} track(s) in queue • Total: ${formatDuration(totalDurationMs)}${loopStatus}`,
     });
@@ -132,7 +130,7 @@ export function buildQueueEmbed(player, page = 1, itemsPerPage = 5) {
  */
 export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
   const embed = new EmbedBuilder()
-    .setTitle(isNowPlaying ? '🎵 Track Starting' : '➕ Added to Queue')
+    .setTitle(isNowPlaying ? 'Track Starting' : 'Added to Queue')
     .setDescription(`**[${track.title}](${track.uri})**`)
     .setColor(Colors.SUCCESS)
     .addFields(
@@ -162,7 +160,7 @@ export function buildTrackAddedEmbed(track, position, isNowPlaying, userId) {
  */
 export function buildPlaylistAddedEmbed(playlistInfo, tracks, query, userId) {
   const embed = new EmbedBuilder()
-    .setTitle('🎶 Playlist Added to Queue')
+    .setTitle('Playlist Added to Queue')
     .setDescription(`**[${playlistInfo?.name || 'Playlist'}](${query})**`)
     .setColor(Colors.SUCCESS)
     .addFields(
@@ -201,7 +199,7 @@ export function buildAIDJEmbed(prompt, tracks, userId) {
   }
 
   return new EmbedBuilder()
-    .setTitle('🎧 AI DJ Playlist Generated')
+    .setTitle('AI DJ Playlist Generated')
     .setDescription(`**Vibe:** "${prompt}"\nAdded **${tracks.length}** tracks to the queue.`)
     .addFields(
       { name: 'Tracks Preview', value: previewValue },

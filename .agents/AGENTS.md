@@ -51,6 +51,7 @@ discord-bot-v2/
 └── utils/
     ├── voiceGuard.js           # Centralized voice channel and player permission validation
     ├── playerHelpers.js        # Reusable channel fetching and embed cleanup helpers
+    ├── logger.js               # Formatted logger with ISO timestamps and level filtering
     ├── theme.js                # Centralized color palette & time/progress formatting utilities
     ├── embeds.js               # Embed generator functions for Now Playing, Queue, Status, AI DJ
     └── components.js          # ActionRow and Button component builders for player controls
@@ -70,7 +71,15 @@ discord-bot-v2/
   const __dirname = path.dirname(__filename);
   ```
 
-### 2. Discord.js v14 Standards
+### 2. Centralized Logging (`utils/logger.js`)
+- Do **not** use raw `console.log` or `console.error` directly in application code. Import `logger` from `utils/logger.js`:
+  ```javascript
+  import logger from '../utils/logger.js';
+  logger.info('Message text');
+  logger.error('Error description', error, { guildId: interaction.guildId });
+  ```
+
+### 3. Discord.js v14 Standards
 - **Ephemeral Flags**: ALWAYS use `flags: MessageFlags.Ephemeral` imported from `discord.js`. Do **not** use the legacy `{ ephemeral: true }` option.
   ```javascript
   import { MessageFlags } from 'discord.js';
@@ -86,7 +95,7 @@ discord-bot-v2/
   }
   ```
 
-### 3. Voice Channel Validation (`utils/voiceGuard.js`)
+### 4. Voice Channel Validation (`utils/voiceGuard.js`)
 - Do not duplicate voice channel checks in commands or button handlers. Use `validateVoicePermissions(interaction, client, options)`:
   ```javascript
   import { validateVoicePermissions } from '../../utils/voiceGuard.js';
@@ -95,10 +104,10 @@ discord-bot-v2/
   const { player, channel } = voiceState;
   ```
 
-### 4. Temporary Messages (`services/messageService.js`)
+### 5. Temporary Messages (`services/messageService.js`)
 - Use `sendTemporaryReply(interaction, payload, durationMs)` or `sendTemporaryMessage(channel, payload, durationMs)` instead of ad-hoc `setTimeout` calls for auto-deleting status updates.
 
-### 5. Design System & Theme Guidelines
+### 6. Design System & Theme Guidelines
 - **Colors**: Never hardcode hex colors in embeds. Import colors from `utils/theme.js`:
   ```javascript
   import { Colors } from '../utils/theme.js';
@@ -135,12 +144,13 @@ discord-bot-v2/
 2. Export `name`, `once` (boolean), and `execute(..., client)`.
    ```javascript
    import { Events } from 'discord.js';
+   import logger from '../utils/logger.js';
 
    export default {
      name: Events.ClientReady,
      once: true,
      execute(client) {
-       console.log(`Logged in as ${client.user.tag}`);
+       logger.info(`Logged in as ${client.user.tag}`);
      },
    };
    ```
@@ -149,6 +159,7 @@ discord-bot-v2/
 
 ## 🧪 Verification & Deployment Commands
 
+- **Run Automated Tests**: `npm test`
 - **Deploy Slash Commands**: `node deploy-commands.js`
 - **Run Bot Locally**: `node index.js`
 - **Run with Docker Compose**: `docker compose up -d`

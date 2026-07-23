@@ -1,10 +1,41 @@
 // services/playerManager.js
 import { Manager, Connectors } from 'moonlink.js';
 import config from '../config.js';
+import logger from '../utils/logger.js';
 import { buildNowPlayingEmbed, buildStatusEmbed } from '../utils/embeds.js';
 import { buildPlayerControls } from '../utils/components.js';
-import { getTextChannel, cleanupLastNowPlaying } from '../utils/playerHelpers.js';
-import { sendTemporaryMessage } from './messageService.js';
+
+/**
+ * Safely fetch a text channel by ID using client cache or API fetch fallback.
+ * @param {object} client Discord client instance
+ * @param {string} channelId Discord channel ID
+ * @returns {Promise<object|null>} Discord channel or null if fetch fails
+ */
+export async function getTextChannel(client, channelId) {
+  if (!channelId) return null;
+  let channel = client.channels.cache.get(channelId);
+  if (!channel) {
+    try {
+      channel = await client.channels.fetch(channelId);
+    } catch (error) {
+      logger.error(`Failed to fetch text channel ${channelId}:`, error);
+      return null;
+    }
+  }
+  return channel;
+}
+
+/**
+ * Delete previous Now Playing message associated with a player if present.
+ * @param {object} player Moonlink player instance
+ */
+export async function cleanupLastNowPlaying(player) {
+  if (!player) return;
+  if (player.lastNowPlayingMessage && typeof player.lastNowPlayingMessage.delete === 'function') {
+    player.lastNowPlayingMessage.delete().catch(() => {});
+    player.lastNowPlayingMessage = null;
+  }
+}
 
 /**
  * Initialize Moonlink Audio Manager and attach event listeners to Discord client.
@@ -30,15 +61,15 @@ export function initPlayerManager(client) {
 
   // Node connection events
   manager.on('nodeConnect', (node) => {
-    console.log(`Node ${node.identifier} connected`);
+    logger.info(`Node ${node.identifier} connected`);
   });
 
   manager.on('nodeDisconnect', (node) => {
-    console.log(`Node ${node.identifier} disconnected`);
+    logger.info(`Node ${node.identifier} disconnected`);
   });
 
   manager.on('nodeError', (node, error) => {
-    console.error(`Node ${node.identifier} encountered an error:`, error);
+    logger.error(`Node ${node.identifier} encountered an error:`, error);
   });
 
   // Track playback events
@@ -57,7 +88,7 @@ export function initPlayerManager(client) {
   });
 
   manager.on('trackEnd', (player, track) => {
-    console.log(`Track ended: ${track.title}`);
+    logger.info(`Track ended: ${track.title}`);
     if (player.queue.size === 0) {
       startIdleTimer(player, client);
     }
@@ -82,15 +113,7 @@ export function initPlayerManager(client) {
 export async function startIdleTimer(player, client) {
   if (player.idleTimeout) return;
 
-  const channel = await getTextChannel(client, player.textChannelId);
-  if (channel) {
-    const warningEmbed = buildStatusEmbed({
-      title: '⏸️ Playback Idle',
-      description: 'Playback stopped. Disconnecting in 30 seconds if no new tracks are added.',
-      type: 'warning',
-    });
-    await sendTemporaryMessage(channel, { embeds: [warningEmbed] }, 5000);
-  }
+  await cleanupLastNowPlaying(player);
 
   player.idleTimeout = setTimeout(async () => {
     const activePlayer = client.manager?.players?.get(player.guildId);
@@ -98,15 +121,7 @@ export async function startIdleTimer(player, client) {
 
     if (!activePlayer.playing && activePlayer.queue.size === 0) {
       await activePlayer.destroy();
-      const textChannel = await getTextChannel(client, activePlayer.textChannelId);
-      if (textChannel) {
-        const disconnectEmbed = buildStatusEmbed({
-          title: '🔌 Disconnected',
-          description: 'Disconnected from voice channel due to inactivity.',
-          type: 'danger',
-        });
-        await sendTemporaryMessage(textChannel, { embeds: [disconnectEmbed] }, 5000);
-      }
+      await cleanupLastNowPlaying(activePlayer);
     }
   }, 30000);
 }

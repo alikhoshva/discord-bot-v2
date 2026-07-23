@@ -4,17 +4,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import config from './config.js';
+import logger from './utils/logger.js';
 import { initPlayerManager } from './services/playerManager.js';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
 // Global error guards
 process.on('unhandledRejection', (reason) => {
-	console.error('Unhandled Rejection:', reason);
+	logger.error('Unhandled Rejection:', reason);
 });
 
 process.on('uncaughtException', (error) => {
-	console.error('Uncaught Exception:', error);
+	logger.error('Uncaught Exception:', error);
 });
 
 // Internal healthcheck endpoint for Docker Compose
@@ -33,12 +34,12 @@ const healthServer = http.createServer((req, res) => {
 		res.end();
 	}
 }).listen(HEALTH_PORT, '0.0.0.0', () => {
-	console.log(`Healthcheck server listening on port ${HEALTH_PORT}`);
+	logger.info(`Healthcheck server listening on port ${HEALTH_PORT}`);
 });
 
 // Graceful shutdown logic for Docker containers
 const gracefulShutdown = async (signal) => {
-	console.log(`Received ${signal}. Shutting down bot gracefully...`);
+	logger.info(`Received ${signal}. Shutting down bot gracefully...`);
 	try {
 		healthServer.close();
 		if (client.manager?.players) {
@@ -48,7 +49,7 @@ const gracefulShutdown = async (signal) => {
 		}
 		client.destroy();
 	} catch (err) {
-		console.error('Error during graceful shutdown:', err);
+		logger.error('Error during graceful shutdown:', err);
 	}
 	process.exit(0);
 };
@@ -81,7 +82,7 @@ for (const folder of commandFolders) {
 		if (command && 'data' in command && 'execute' in command) {
 			client.commands.set(command.data.name, command);
 		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+			logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
 	}
 }
@@ -102,4 +103,21 @@ for (const file of eventFiles) {
 	}
 }
 
-client.login(config.token);
+const loginWithRetry = async (retries = 5, delayMs = 5000) => {
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			await client.login(config.token);
+			return;
+		} catch (err) {
+			logger.error(`Login attempt ${attempt}/${retries} failed: ${err.message}`);
+			if (attempt === retries) {
+				logger.error('Max login retries reached. Exiting...');
+				process.exit(1);
+			}
+			logger.info(`Retrying in ${delayMs / 1000}s...`);
+			await new Promise((resolve) => setTimeout(resolve, delayMs));
+		}
+	}
+};
+
+loginWithRetry();

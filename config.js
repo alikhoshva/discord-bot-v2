@@ -9,7 +9,7 @@ export default {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
     GEMINI_MODEL: process.env.GEMINI_MODEL,
-    prefix: "!",
+    logLevel: process.env.LOG_LEVEL || 'info',
     lavalink: {
         host: process.env.LAVALINK_HOST || "192.168.1.249",
         port: parseInt(process.env.LAVALINK_PORT) || 2333,

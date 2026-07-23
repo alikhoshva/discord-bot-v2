@@ -1,7 +1,7 @@
 // events/interactionCreate.js
 import { Events, MessageFlags } from 'discord.js';
+import logger from '../utils/logger.js';
 import { handlePlayerButtons } from '../interactions/buttons/playerButtons.js';
-import { handleQueuePagination } from '../interactions/buttons/queuePagination.js';
 import { handlePlayAutocomplete } from '../interactions/autocomplete/playAutocomplete.js';
 
 export default {
@@ -16,7 +16,11 @@ export default {
       try {
         await command.execute(interaction, client);
       } catch (error) {
-        console.error(error);
+        logger.error(`Error executing slash command /${interaction.commandName}`, error, {
+          guildId: interaction.guildId,
+          userId: interaction.user?.id,
+          commandName: interaction.commandName,
+        });
         const errorOptions = {
           content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
@@ -52,17 +56,13 @@ export default {
       }
 
       try {
-        if (
-          customId.startsWith('music_queue_prev_') ||
-          customId.startsWith('music_queue_next_') ||
-          customId === 'music_queue_refresh'
-        ) {
-          await handleQueuePagination(interaction, player);
-        } else {
-          await handlePlayerButtons(interaction, player);
-        }
+        await handlePlayerButtons(interaction, player);
       } catch (err) {
-        console.error('Error handling button interaction:', err);
+        logger.error(`Error handling button interaction "${customId}"`, err, {
+          guildId: interaction.guildId,
+          userId: interaction.user?.id,
+          customId,
+        });
         if (!interaction.replied && !interaction.deferred) {
           await interaction.reply({
             content: 'An error occurred while executing player controls.',
