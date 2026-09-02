@@ -68,7 +68,7 @@ export default {
 
     // 3. Handle Autocomplete Suggestions
     if (interaction.isAutocomplete()) {
-      await handlePlayAutocomplete(interaction);
+      await handlePlayAutocomplete(interaction, client);
       return;
     }
   },
