@@ -39,6 +39,9 @@ export function createMockQueue(tracks = []) {
     removeRange(start = 0, count = 1) {
       return queueTracks.splice(start, count);
     },
+    unshift(track) {
+      if (track) queueTracks.unshift(track);
+    },
     clear() {
       queueTracks.length = 0;
     },
@@ -144,9 +147,9 @@ export function createMockMoonlinkManager(options = {}) {
       },
       cache: playersMap,
     },
-    search: async ({ query, requester }) => {
+    search: async ({ query, source, requester }) => {
       if (options.searchHandler) {
-        return options.searchHandler({ query, requester });
+        return options.searchHandler({ query, source, requester });
       }
 
       if (query.includes('playlist')) {

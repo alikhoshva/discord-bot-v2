@@ -4,6 +4,7 @@ import config from '../config.js';
 import logger from '../utils/logger.js';
 import { buildNowPlayingEmbed, buildStatusEmbed } from '../utils/embeds.js';
 import { buildPlayerControls } from '../utils/components.js';
+import { sendTemporaryMessage } from './messageService.js';
 
 /**
  * Safely fetch a text channel by ID using client cache or API fetch fallback.
@@ -114,6 +115,61 @@ export function initPlayerManager(client) {
 
   manager.on('queueEnd', (player) => {
     startIdleTimer(player, client);
+  });
+
+  manager.on('trackException', async (player, track, exception) => {
+    logger.warn(`Track exception for "${track?.title}":`, exception?.message || exception);
+
+    const isYouTube = track && (
+      track.sourceName === 'youtube' ||
+      track.uri?.includes('youtube.com') ||
+      track.uri?.includes('youtu.be')
+    );
+
+    if (isYouTube && !track._scFallbackAttempted) {
+      try {
+        const cleanTitle = (track.title || '')
+          .replace(/\s*\(Official (Music )?Video\)/gi, '')
+          .replace(/\s*\[Official (Music )?Video\]/gi, '')
+          .replace(/\s*\(Audio\)/gi, '')
+          .replace(/\s*\[Audio\]/gi, '')
+          .replace(/\s*\(4K Remaster\)/gi, '')
+          .replace(/\s*\| 4K/gi, '')
+          .replace(/\s*- Topic$/i, '')
+          .trim();
+        const author = track.author && !track.author.toLowerCase().includes('topic') ? track.author : '';
+        const query = `${cleanTitle} ${author}`.trim();
+
+        logger.info(`YouTube playback blocked for "${track.title}". Attempting SoundCloud fallback: "${query}"`);
+
+        const scResult = await client.manager.search({
+          query,
+          source: 'soundcloud',
+          requester: track.requester,
+        });
+
+        if (scResult?.tracks?.length > 0) {
+          const fallbackTrack = scResult.tracks[0];
+          fallbackTrack.requester = track.requester;
+          fallbackTrack._scFallbackAttempted = true;
+
+          player.queue.unshift(fallbackTrack);
+          await player.play();
+
+          const channel = await getTextChannel(client, player.textChannelId);
+          if (channel) {
+            await sendTemporaryMessage(
+              channel,
+              { content: `YouTube blocked playback of **${track.title}**. Automatically switched to SoundCloud version!` },
+              10000,
+            );
+          }
+          return;
+        }
+      } catch (err) {
+        logger.error(`Error during SoundCloud fallback for "${track?.title}":`, err);
+      }
+    }
   });
 
   manager.on('playerDestroy', async (player) => {

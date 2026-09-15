@@ -42,45 +42,95 @@ async function execute(interaction, client) {
 
   await player.connect();
 
-  logger.info('Searching for all tracks in parallel...');
-  const searchPromises = playlist.map((song) =>
-    client.manager.search({
+  // Step 1: Find and start the first available track immediately
+  logger.info(`Resolving initial track for DJ vibe: "${query}"...`);
+  let firstTrack = null;
+  let firstTrackIndex = -1;
+
+  for (let i = 0; i < playlist.length; i++) {
+    const song = playlist[i];
+    let res = await client.manager.search({
       query: song,
       requester: interaction.user.id,
-    }),
-  );
+    });
+    if (!res || !res.tracks?.length || res.loadType === 'empty' || res.loadType === 'error') {
+      res = await client.manager.search({
+        query: song,
+        source: 'soundcloud',
+        requester: interaction.user.id,
+      });
+    }
+    if (res?.tracks?.length) {
+      firstTrack = res.tracks[0];
+      firstTrack.requester = interaction.user.id;
+      firstTrackIndex = i;
+      break;
+    }
+  }
 
-  const searchResults = await Promise.all(searchPromises);
-
-  const tracks = searchResults
-    .map((res) => {
-      if (!res || !res.tracks?.length || res.loadType === 'empty' || res.loadType === 'error') {
-        if (res?.error) logger.warn(`Error loading a track: ${res.error}`);
-        return null;
-      }
-      const track = res.tracks[0];
-      if (track) track.requester = interaction.user.id;
-      return track;
-    })
-    .filter((track) => track !== null);
-
-  if (!tracks.length) {
+  if (!firstTrack) {
     return interaction.editReply('Could not find any usable tracks for your playlist.');
   }
 
   const isNowPlaying = !player.playing && !player.current;
-  player.queue.add(tracks);
+  player.queue.add(firstTrack);
 
   if (!player.playing) {
     await player.play();
   }
 
-  const embed = buildAIDJEmbed(query, tracks, interaction.user.id);
+  // Step 2: Build and send playlist confirmation embed
+  // Synthesize full playlist track list for the embed summary
+  const summaryTracks = playlist.map((songName, idx) => {
+    if (idx === firstTrackIndex) return firstTrack;
+    return { title: songName, duration: 180000, requester: interaction.user.id, uri: '#' };
+  });
+  const embed = buildAIDJEmbed(query, summaryTracks, interaction.user.id);
+
   if (isNowPlaying) {
     await interaction.deleteReply().catch(() => {});
   } else {
     await sendTemporaryReply(interaction, { embeds: [embed] }, 10000);
   }
+
+  // Step 3: Resolve remaining tracks sequentially in the background with humanized throttling
+  const remainingSongs = playlist.filter((_, idx) => idx !== firstTrackIndex);
+  (async () => {
+    for (const song of remainingSongs) {
+      // 1200ms - 1600ms jitter delay to prevent YouTube rate-limiting
+      await new Promise((r) => setTimeout(r, 1200 + Math.floor(Math.random() * 400)));
+
+      const activePlayer = client.manager?.players?.get(interaction.guild.id);
+      if (!activePlayer) break;
+
+      try {
+        let res = await client.manager.search({
+          query: song,
+          requester: interaction.user.id,
+        });
+
+        if (!res || !res.tracks?.length || res.loadType === 'empty' || res.loadType === 'error') {
+          res = await client.manager.search({
+            query: song,
+            source: 'soundcloud',
+            requester: interaction.user.id,
+          });
+        }
+
+        if (res?.tracks?.length) {
+          const track = res.tracks[0];
+          track.requester = interaction.user.id;
+          activePlayer.queue.add(track);
+
+          if (!activePlayer.playing && !activePlayer.current) {
+            await activePlayer.play();
+          }
+        }
+      } catch (err) {
+        logger.warn(`Failed to resolve DJ track "${song}":`, err);
+      }
+    }
+  })().catch((err) => logger.error('Error queuing remaining DJ tracks:', err));
 }
 
 export default {

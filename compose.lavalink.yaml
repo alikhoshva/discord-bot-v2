@@ -1,0 +1,144 @@
+services:
+  discord-bot:
+    build: .
+    container_name: discord_bot
+    restart: unless-stopped
+    depends_on:
+      lavalink:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - CLIENT_ID=${CLIENT_ID}
+      - GUILD_ID=${GUILD_ID}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - LAVALINK_HOST=lavalink
+      - LAVALINK_PORT=2333
+      - LAVALINK_PASSWORD=${LAVALINK_PASSWORD}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - SPOTIFY_PLAYLIST_LIMIT=${SPOTIFY_PLAYLIST_LIMIT:-20}
+    networks:
+      - bot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'      # Max 1 CPU core
+          memory: 512M     # Max 512MB RAM
+        reservations:
+          cpus: '0.2'      # Reserve 0.2 CPU core
+          memory: 128M     # Reserve 128MB RAM
+
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    container_name: lavalink
+    restart: unless-stopped
+    user: root
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 2333 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      - _JAVA_OPTIONS=-Xmx2G
+
+      - SERVER_PORT=2333
+      - SERVER_ADDRESS=0.0.0.0
+      - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD}
+
+      # Plugins
+      - LAVALINK_PLUGINS_0_DEPENDENCY=dev.lavalink.youtube:youtube-plugin:1.18.2
+      - LAVALINK_PLUGINS_0_SNAPSHOT=false
+
+      - LAVALINK_PLUGINS_1_DEPENDENCY=com.github.topi314.lavasrc:lavasrc-plugin:4.8.3
+      - LAVALINK_PLUGINS_1_REPOSITORY=https://maven.lavalink.dev/releases
+      - LAVALINK_PLUGINS_1_SNAPSHOT=false
+
+      # YouTube Plugin Configuration
+      - PLUGINS_YOUTUBE_ENABLED=true
+      - PLUGINS_YOUTUBE_ALLOWSEARCH=true
+      - PLUGINS_YOUTUBE_ALLOWDIRECTVIDEOIDS=true
+      - PLUGINS_YOUTUBE_ALLOWDIRECTPLAYLISTIDS=true
+      - PLUGINS_YOUTUBE_OAUTH_ENABLED=true
+      - PLUGINS_YOUTUBE_OAUTH_REFRESHTOKEN=${YOUTUBE_OAUTH_REFRESH_TOKEN}
+      - PLUGINS_YOUTUBE_REMOTECIPHER_URL=https://cipher.kikkia.dev/
+      - PLUGINS_YOUTUBE_CLIENTS_0=MUSIC
+      - PLUGINS_YOUTUBE_CLIENTS_1=WEB
+      - PLUGINS_YOUTUBE_CLIENTS_2=MWEB
+      - PLUGINS_YOUTUBE_CLIENTS_3=TV
+      - PLUGINS_YOUTUBE_CLIENTS_4=ANDROID_VR
+      - PLUGINS_YOUTUBE_CLIENTS_5=WEBEMBEDDED
+
+      # LavaSrc Plugin Configuration (Spotify - handled directly by bot)
+      - PLUGINS_LAVASRC_SOURCES_SPOTIFY=false
+      - PLUGINS_LAVASRC_SPOTIFY_CLIENTID=${SPOTIFY_CLIENT_ID}
+      - PLUGINS_LAVASRC_SPOTIFY_CLIENTSECRET=${SPOTIFY_CLIENT_SECRET}
+      - PLUGINS_LAVASRC_SPOTIFY_COUNTRYCODE=US
+      - PLUGINS_LAVASRC_SPOTIFY_PLAYLISTLOADLIMIT=6
+      - PLUGINS_LAVASRC_SPOTIFY_RESOLVEARTISTSINSEARCH=true
+      - PLUGINS_LAVASRC_PROVIDERS_0=ytsearch:"%ISRC%"
+      - PLUGINS_LAVASRC_PROVIDERS_1=ytsearch:%QUERY%
+
+      # Lavalink Server Sources
+      - LAVALINK_SERVER_SOURCES_YOUTUBE=false
+      - LAVALINK_SERVER_SOURCES_BANDCAMP=true
+      - LAVALINK_SERVER_SOURCES_SOUNDCLOUD=true
+      - LAVALINK_SERVER_SOURCES_TWITCH=true
+      - LAVALINK_SERVER_SOURCES_VIMEO=true
+      - LAVALINK_SERVER_SOURCES_HTTP=true
+      - LAVALINK_SERVER_SOURCES_LOCAL=false
+
+      # Audio Settings
+      - LAVALINK_SERVER_BUFFERDURATIONMS=400
+      - LAVALINK_SERVER_FRAMEBUFFERDURATIONMS=5000
+      - LAVALINK_SERVER_OPUSENCODINGQUALITY=10
+      - LAVALINK_SERVER_RESAMPLINGQUALITY=LOW
+      - LAVALINK_SERVER_TRACKSTUCKTHRESHOLDMS=10000
+      - LAVALINK_SERVER_USESEEKGHOSTING=true
+      - LAVALINK_SERVER_YOUTUBEPLAYLISTLOADLIMIT=6
+      - LAVALINK_SERVER_PLAYERUPDATEINTERVAL=5
+      - LAVALINK_SERVER_YOUTUBESEARCHENABLED=true
+      - LAVALINK_SERVER_SOUNDCLOUDSEARCHENABLED=true
+      - LAVALINK_SERVER_GCWARNINGS=true
+
+      # Logging
+      - LOGGING_FILE_PATH=./logs/
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_LAVALINK=INFO
+    ports:
+      - 2333:2333
+    volumes:
+      - lavalink-plugins:/opt/Lavalink/plugins/
+    networks:
+      - bot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'      # Max 2 CPU cores
+          memory: 2G       # Max 2GB RAM
+        reservations:
+          cpus: '0.5'      # Reserve half a core
+          memory: 512M     # Reserve 512MB RAM
+
+volumes:
+  lavalink-plugins:
+
+networks:
+  bot-network:
+    name: bot-network

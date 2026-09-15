@@ -10,6 +10,7 @@ export default {
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
     GEMINI_MODEL: process.env.GEMINI_MODEL,
     logLevel: process.env.LOG_LEVEL || 'info',
+    spotifyPlaylistLimit: parseInt(process.env.SPOTIFY_PLAYLIST_LIMIT, 10) || 20,
     lavalink: {
         host: process.env.LAVALINK_HOST || "192.168.1.249",
         port: parseInt(process.env.LAVALINK_PORT) || 2333,

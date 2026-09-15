@@ -99,6 +99,83 @@ describe('Slash Command Integration Tests', () => {
       assert.strictEqual(interaction.deferred, true);
       assert.ok(interaction._replies.some((r) => typeof r === 'string' && r.includes('No results found')));
     });
+
+    it('should fallback to SoundCloud search when YouTube search returns empty', async () => {
+      const voiceChannel = createMockVoiceChannel();
+      const interaction = createMockInteraction({
+        commandName: 'play',
+        optionsData: { song: 'blocked_song_title' },
+        memberOptions: { voiceChannel },
+      });
+
+      const searchCalls = [];
+      const manager = createMockMoonlinkManager({
+        searchHandler: ({ query, source, requester }) => {
+          searchCalls.push({ query, source });
+          if (!source) {
+            // First YouTube attempt returns empty
+            return { loadType: 'empty', tracks: [] };
+          }
+          if (source === 'soundcloud') {
+            return {
+              loadType: 'search',
+              tracks: [createMockTrack({ title: query, requester, uri: 'https://soundcloud.com/test' })],
+            };
+          }
+          return { loadType: 'empty', tracks: [] };
+        },
+      });
+      const client = createMockClient({ manager });
+
+      await playCommand.execute(interaction, client);
+
+      assert.strictEqual(interaction.deferred, true);
+      assert.strictEqual(searchCalls.length, 2);
+      assert.strictEqual(searchCalls[0].source, undefined);
+      assert.strictEqual(searchCalls[1].source, 'soundcloud');
+
+      const player = client.manager.players.get(interaction.guild.id);
+      assert.ok(player);
+      assert.strictEqual(player.playing, true);
+      assert.strictEqual(player.current?.title, 'blocked_song_title');
+    });
+
+    it('should resolve and play Spotify track link via YouTube search', async () => {
+      const voiceChannel = createMockVoiceChannel();
+      const interaction = createMockInteraction({
+        commandName: 'play',
+        optionsData: { song: 'https://open.spotify.com/track/2RePzySZcb2TFkBkmQsGo1' },
+        memberOptions: { voiceChannel },
+      });
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => ({
+        ok: true,
+        text: async () => `
+          <script id="__NEXT_DATA__" type="application/json">
+            { "props": { "pageProps": { "state": { "data": { "entity": {
+              "type": "track",
+              "title": "Flares of the Blazing Sun",
+              "artists": [{ "name": "HOYO-MiX" }]
+            } } } } } }
+          </script>
+        `,
+      });
+
+      try {
+        const manager = createMockMoonlinkManager();
+        const client = createMockClient({ manager });
+
+        await playCommand.execute(interaction, client);
+
+        assert.strictEqual(interaction.deferred, true);
+        const player = client.manager.players.get(interaction.guild.id);
+        assert.ok(player);
+        assert.strictEqual(player.playing, true);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 
   describe('/skip', () => {

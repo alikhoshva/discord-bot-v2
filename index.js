@@ -42,8 +42,10 @@ const gracefulShutdown = async (signal) => {
 	logger.info(`Received ${signal}. Shutting down bot gracefully...`);
 	try {
 		healthServer.close();
-		if (client.manager?.players) {
-			for (const player of client.manager.players.values()) {
+		if (typeof client.manager?.players?.destroyAll === 'function') {
+			await client.manager.players.destroyAll().catch(() => {});
+		} else if (Array.isArray(client.manager?.players?.all)) {
+			for (const player of client.manager.players.all) {
 				await player.destroy().catch(() => {});
 			}
 		}
